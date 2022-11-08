@@ -21,3 +21,9 @@ This is a simple browser fractal exploration tool with limited performance and p
 * Controlling the view while zoomed far in is difficult
 * Higher `Max Iteration` values cause certain details to get blended together due to how a points hue is calculated
 * Zooming in extremely far can cause loss of details (This is more of a JS floating point thing and there isn't much I can do about it)
+
+## Images
+![](https://i.imgur.com/KuOI26i.png)
+![](https://i.imgur.com/5uqhO1Q.png)
+![](https://i.imgur.com/IW37OeI.png)
+![](https://i.imgur.com/mW4WV8J.png)
