@@ -1,0 +1,20 @@
+body {
+	background: #333;
+	color: white;
+}
+
+canvas {
+	background: black;
+	padding: 5px;
+	border: 2px solid white;
+}
+
+.control-box {
+	background-color: black;
+	padding: 5px;
+	border: 2px solid white;
+
+	float: right;
+	display: flex;
+	flex-direction: column;
+}

@@ -1,0 +1,243 @@
+const canvas = document.querySelector('#main')
+var ctx = canvas.getContext('2d')
+
+const navcanv = document.querySelector("#nav")
+var navctx = navcanv.getContext('2d')
+const infinity_threshold = 2;
+
+resolution = 800;
+iteration_count = 800; // The number of points to render per frame
+aspect_ratio = 3.5 / 2; // X / Y for the Burning Ship fractal
+
+navcanv.width *= aspect_ratio;
+
+resolution_x = resolution * aspect_ratio;
+resolution_y = resolution;
+
+canvas.width = resolution_x;
+canvas.height = resolution_y;
+
+// Z = Z^2 + C
+/*	
+*	Equation for the Mandelbrot set
+*	
+*/	
+
+function hslToHex(h, s, l) {
+	h = h % 360; // Make it loop around like a color wheel
+	l /= 100;
+	const a = s * Math.min(l, 1 - l) / 100;
+	const f = n => {
+		const k = (n + h / 30) % 12;
+		const color = l - a * Math.max(Math.min(k - 3, 9 - k, 1), -1);
+		return Math.round(255 * color).toString(16).padStart(2, '0');   // convert to Hex and prefix "0" if needed
+	};
+	return `#${f(0)}${f(8)}${f(4)}`;
+}
+
+function complexPointToCanvasPoint(x, y) {
+	nx = (x + infinity_threshold) / (2 * infinity_threshold);
+	ny = ((y + infinity_threshold) / (2 * infinity_threshold));
+	nx *= resolution;
+	ny *= resolution;
+	ny -= resolution
+	return [nx, -ny];
+}
+
+var rendered = 0;
+let max_iteration = 100;
+
+let x = 0;
+let y = 0;
+let scale_factor_x = (3.5 / resolution_x)
+let translate_factor_x = -2.5
+
+let scale_factor_y = (2 / resolution_y)
+let translate_factor_y = -1.5;
+
+let rendering = false;
+let initial_rendering_time = new Date();
+let __interval__;
+
+let cached_result;
+hue_shift = 0;
+
+function DoRender(tx, ty, z) {
+
+	hue_shift = document.getElementById("hue").value * 1;
+	max_iteration = document.getElementById("itr2").value * 1;
+
+	delete initial_rendering_time;
+	initial_rendering_time = new Date();
+
+	rendering = true;
+	x = 0;
+	y = 0;
+	rendered = 0;
+	scale_factor_x = (3.5 / resolution_x)
+	translate_factor_x = -2.5
+
+	scale_factor_y = (2 / resolution_y)
+	translate_factor_y = -1.5;
+
+	navctx.beginPath()
+	navctx.fillStyle = "#000"
+	navctx.fillRect(0, 0, navcanv.width, navcanv.height);
+	if(cached_result) {
+		if(cached_result.complete) {
+			navctx.drawImage(cached_result, 0, 0, navcanv.width, navcanv.height);
+		}
+	}
+	ctx.beginPath();
+	navctx.strokeStyle = "#ffffff"
+	navctx.lineWidth = 2
+	navctx.rect((tx / 3.5) * navcanv.width, (ty / 2) * navcanv.height, navcanv.width * z, navcanv.height * z)
+	navctx.stroke();
+
+	__interval__ = setInterval(function() {
+
+		for(var i = 0; i < iteration_count; i++) {
+			sx = (x * scale_factor_x * z) + translate_factor_x + tx;
+			sy = (y * scale_factor_y * z) + translate_factor_y + ty;
+
+			zx = sx;
+			zy = sy;
+
+			iteration = 0;
+
+			while (zx*zx + zy*zy < 4 && iteration < max_iteration) {
+				_x = zx*zx - zy*zy + sx 
+				zy = Math.abs(2*zx*zy) + sy // abs returns the absolute value
+				zx = _x
+				iteration++
+			}
+
+			ctx.beginPath()
+			if(iteration >= max_iteration) { // Belongs to the set
+				ctx.fillStyle = "#000"
+			}else {
+				ctx.fillStyle = hslToHex(((iteration / max_iteration) * 360) + hue_shift , 85, 60)
+			}
+			ctx.rect(x, y, 1, 1);
+			ctx.fill();
+
+			rendered++
+			y++;
+			if( y > resolution_y ) {
+				y = 0;
+				x++
+			}
+			if(x > resolution_x ) {
+				window.clearInterval( __interval__ );
+				rendering = false;
+				time = Date.now() - initial_rendering_time;
+				console.log(`Rendered ${rendered} points in ${time / 1000} seconds`)
+
+				if(!cached_result) {
+					cached_result = new Image();
+					cached_result.src = canvas.toDataURL('png');
+				}
+
+				break;
+			}
+		}
+
+	}, 0)
+}
+
+let res_slider = document.getElementById("resolution")
+res_slider.value = resolution;
+let itr_slider = document.getElementById("iteration")
+itr_slider.value = iteration_count;
+let render_button = document.getElementById("rerender")
+
+res_label_x = document.getElementById("resx")
+res_label_x.innerHTML = resolution_x;
+res_label_y = document.getElementById("resy")
+res_label_y.innerHTML = resolution_y;
+itr_label = document.getElementById("iter")
+itr_label.innerHTML = iteration_count;
+
+res_slider.addEventListener("change", function() {
+	if(rendering) {
+		this.value = resolution;
+	}else {
+		resolution = this.value;
+		resolution_x = resolution * aspect_ratio;
+		resolution_y = resolution;
+
+		res_label_x.innerHTML = resolution_x;
+		res_label_y.innerHTML = resolution_y;
+
+		canvas.width = resolution_x;
+		canvas.height = resolution_y;
+	}
+});
+itr_slider.addEventListener("change", function() {
+	iteration_count = this.value;
+	itr_label.innerHTML = iteration_count;
+})
+
+pan_x = 0;
+pan_y = 0;
+scale = 1;
+
+render_button.addEventListener("click", function() {
+	if(rendering) { return; }
+	DoRender(pan_x, pan_y, scale)
+})
+navcanv.addEventListener("mousedown", function() {this.mouse = true})
+navcanv.addEventListener("mouseup", function() {this.mouse = false})
+navcanv.addEventListener("mousemove", function(e) {
+	if(this.mouse) {
+		if(this.last_drag) {
+			dx = e.screenX - this.last_drag.screenX
+			dy = e.screenY - this.last_drag.screenY
+			
+			pan_x += dx * (3.5 / navcanv.width)
+			pan_y += dy * (2 / navcanv.height)
+
+			navctx.beginPath()
+			navctx.fillStyle = "#000"
+			navctx.fillRect(0, 0, navcanv.width, navcanv.height);
+			if(cached_result) {
+				if(cached_result.complete) {
+					navctx.drawImage(cached_result, 0, 0, navcanv.width, navcanv.height);
+				}
+			}
+			ctx.beginPath();
+			navctx.strokeStyle = "#ffffff"
+			navctx.lineWidth = 2
+			navctx.rect((pan_x / 3.5) * navcanv.width, (pan_y / 2) * navcanv.height, navcanv.width * scale, navcanv.height * scale)
+			navctx.stroke();
+		}
+
+		this.last_drag = e;
+	}else {
+		this.last_drag = null;
+	}
+});
+navcanv.addEventListener("wheel", function(e) {
+	let _scale = scale; // old scale for calculations
+	scale += ( ( e.deltaY * scale ) / 250 ) // The zoom rate gets slower as scale gets smaller
+	scale = Math.max(0, Math.min(1, scale)); // Clamp range to 0-1
+
+	pan_x += (((navcanv.width * _scale) - (navcanv.width * scale)) / 2) * (3.5 / navcanv.width);
+	pan_y += (((navcanv.height * _scale) - (navcanv.height * scale)) / 2) * (2 / navcanv.height);
+
+	navctx.beginPath()
+	navctx.fillStyle = "#000"
+	navctx.fillRect(0, 0, navcanv.width, navcanv.height);
+	if(cached_result) {
+		if(cached_result.complete) {
+			navctx.drawImage(cached_result, 0, 0, navcanv.width, navcanv.height);
+		}
+	}
+	ctx.beginPath();
+	navctx.strokeStyle = "#ffffff"
+	navctx.lineWidth = 2
+	navctx.rect((pan_x / 3.5) * navcanv.width, (pan_y / 2) * navcanv.height, navcanv.width * scale, navcanv.height * scale)
+	navctx.stroke();
+})
+
+DoRender(0, 0, 1);
