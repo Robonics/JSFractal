@@ -18,3 +18,14 @@ canvas {
 	display: flex;
 	flex-direction: column;
 }
+
+.zoom-box {
+	background-color: black;
+	padding: 5px;
+	border: 2px solid white;
+
+	margin-right: 5px;
+	float: right;
+	display: flex;
+	flex-direction: column;
+}
