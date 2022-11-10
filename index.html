@@ -6,7 +6,7 @@
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
 	<title>Fractal</title>
 	<link rel="stylesheet" href="styles/index.css">
-	<script src="scripts/index_async.js" defer></script>
+	<script type="module" src="scripts/index_async.js" defer></script>
 </head>
 <body>
 	<canvas id="main" style="width: 900px;"></canvas>
@@ -23,7 +23,15 @@
 		<label title="The maximum iterations per point, higher will be more accurate" for="itr2">Max Iterations</label>
 		<input type="number" id="itr2" name="itr2" min="30" max="1000" value="100">
 
+		<select name="fractals" id="fractals"></select>
+
 		<button id="rerender">Render</button>
+	</div>
+	<div class="zoom-box">
+		<div>x: <input type="number" id="x-coord" value="0"></div>
+		<div>y: <input type="number" id="y-coord" value="0"></div>
+		<div>zoom: <span id="zoom">1</span></div>
+		<button id="reset">Reset</button>
 	</div>
 	<canvas id="nav" width="150px" height="150px"></canvas>
 </body>
