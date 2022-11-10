@@ -1,27 +1,28 @@
+"use stri"
+import fractals from "./fractals.js"
+
+// FIXME: Changing this values screw up the resolution
+const MAGIC_X = 3.5;
+const MAGIC_Y = 2;
+
 const canvas = document.querySelector('#main')
 var ctx = canvas.getContext('2d')
 
 const navcanv = document.querySelector("#nav")
 var navctx = navcanv.getContext('2d')
-const infinity_threshold = 2;
+const infinity_threshold = MAGIC_Y;
 
-resolution = 800;
-iteration_count = 800; // The number of points to render per frame
-aspect_ratio = 3.5 / 2; // X / Y for the Burning Ship fractal
+let resolution = 800;
+let iteration_count = 800; // The number of points to render per frame
+let aspect_ratio = MAGIC_X / MAGIC_Y; // X / Y for the Burning Ship fractal
 
 navcanv.width *= aspect_ratio;
 
-resolution_x = resolution * aspect_ratio;
-resolution_y = resolution;
+let resolution_x = resolution * aspect_ratio;
+let resolution_y = resolution;
 
 canvas.width = resolution_x;
 canvas.height = resolution_y;
-
-// Z = Z^2 + C
-/*	
-*	Equation for the Mandelbrot set
-*	
-*/	
 
 function hslToHex(h, s, l) {
 	h = h % 360; // Make it loop around like a color wheel
@@ -49,10 +50,10 @@ let max_iteration = 100;
 
 let x = 0;
 let y = 0;
-let scale_factor_x = (3.5 / resolution_x)
+let scale_factor_x = (MAGIC_X / resolution_x)
 let translate_factor_x = -2.5
 
-let scale_factor_y = (2 / resolution_y)
+let scale_factor_y = (MAGIC_Y / resolution_y)
 let translate_factor_y = -1.5;
 
 let rendering = false;
@@ -61,27 +62,43 @@ let __interval__;
 
 let cached_result;
 let last_render = new Image();
-hue_shift = 0;
+let hue_shift = 0;
 
-let preview_x = 0;
-let preview_y = 0;
+// Fractal selector
+let cur_fractal = "";
+let dropdown = document.getElementById("fractals");
+let i = 0;
+for (var fractal in fractals.fractals) {
+	var option = document.createElement("option");
+	option.value = fractal;
+	option.innerHTML = fractal;
+	if(i == 0) {
+		option.selected = true;
+		cur_fractal = fractal;
+	}
 
-function DoRender(tx, ty, z) {
+	dropdown.appendChild( option )
+
+	i++;
+}
+dropdown.addEventListener("change", function() {
+	cur_fractal = this.value;
+	cached_result = null;
+})
+
+function DoRender(tx, ty, z) { // TODO: Orbit calculations
 
 	hue_shift = document.getElementById("hue").value * 1;
 	max_iteration = document.getElementById("itr2").value * 1;
 
-	delete initial_rendering_time;
 	initial_rendering_time = new Date();
 
 	rendering = true;
 	x = 0;
 	y = 0;
 	rendered = 0;
-	scale_factor_x = (3.5 / resolution_x)
+	scale_factor_x = (MAGIC_X / resolution_x)
 	translate_factor_x = -2.5
-	preview_x = 0;
-	preview_y = 0;
 
 	scale_factor_y = (2 / resolution_y)
 	translate_factor_y = -1.5;
@@ -97,7 +114,7 @@ function DoRender(tx, ty, z) {
 	ctx.beginPath();
 	navctx.strokeStyle = "#ffffff"
 	navctx.lineWidth = 2
-	navctx.rect((tx / 3.5) * navcanv.width, (ty / 2) * navcanv.height, navcanv.width * z, navcanv.height * z)
+	navctx.rect((tx / MAGIC_X) * navcanv.width, (ty / MAGIC_Y) * navcanv.height, navcanv.width * z, navcanv.height * z)
 	navctx.stroke();
 
 	ctx.setTransform(1, 0, 0, 1, 0, 0);
@@ -105,20 +122,17 @@ function DoRender(tx, ty, z) {
 	__interval__ = setInterval(function() {
 
 		for(var i = 0; i < iteration_count; i++) {
-			sx = (x * scale_factor_x * z) + translate_factor_x + tx;
-			sy = (y * scale_factor_y * z) + translate_factor_y + ty;
+			var sx = (x * scale_factor_x * z) + translate_factor_x + tx + fractals.offsets[cur_fractal].x;
+			var sy = (y * scale_factor_y * z) + translate_factor_y + ty + fractals.offsets[cur_fractal].y;
 
-			zx = sx;
-			zy = sy;
+			let iteration = fractals.fractals[cur_fractal](sx, sy, max_iteration );
 
-			iteration = 0;
-
-			while (zx*zx + zy*zy < 4 && iteration < max_iteration) {
-				_x = zx*zx - zy*zy + sx 
-				zy = Math.abs(2*zx*zy) + sy // abs returns the absolute value
-				zx = _x
-				iteration++
-			}
+			// while (zx*zx + zy*zy < 4 && iteration < max_iteration) {
+			// 	var _x = zx*zx - zy*zy + sx 
+			// 	zy = Math.abs(2*zx*zy) + sy // abs returns the absolute value
+			// 	zx = _x
+			// 	iteration++
+			// }
 
 			ctx.beginPath()
 			if(iteration >= max_iteration) { // Belongs to the set
@@ -138,7 +152,7 @@ function DoRender(tx, ty, z) {
 			if(x > resolution_x ) {
 				window.clearInterval( __interval__ );
 				rendering = false;
-				time = Date.now() - initial_rendering_time;
+				var time = Date.now() - initial_rendering_time;
 				console.log(`Rendered ${rendered} points in ${time / 1000} seconds`)
 
 				if(!cached_result) {
@@ -163,12 +177,16 @@ let itr_slider = document.getElementById("iteration")
 itr_slider.value = iteration_count;
 let render_button = document.getElementById("rerender")
 
-res_label_x = document.getElementById("resx")
+let res_label_x = document.getElementById("resx")
 res_label_x.innerHTML = resolution_x;
-res_label_y = document.getElementById("resy")
+let res_label_y = document.getElementById("resy")
 res_label_y.innerHTML = resolution_y;
-itr_label = document.getElementById("iter")
+let itr_label = document.getElementById("iter")
 itr_label.innerHTML = iteration_count;
+
+let xcoord = document.getElementById("x-coord")
+let ycoord = document.getElementById("y-coord")
+let zoom = document.getElementById("zoom")
 
 res_slider.addEventListener("change", function() {
 	if(rendering) {
@@ -190,42 +208,43 @@ itr_slider.addEventListener("change", function() {
 	itr_label.innerHTML = iteration_count;
 })
 
-pan_x = 0;
-pan_y = 0;
-scale = 1;
+let pan_x = 0;
+let pan_y = 0;
+let scale = 1;
 
 render_button.addEventListener("click", function() {
 	if(rendering) { return; }
 	DoRender(pan_x, pan_y, scale)
 })
 navcanv.addEventListener("mousedown", function() {this.mouse = true})
-window.addEventListener("mouseup", function() {navcanv.mouse = false})
+canvas.addEventListener("mousedown", function() { this.mouse = true})
+window.addEventListener("mouseup", function() {navcanv.mouse = false; canvas.mouse = false;})
 navcanv.addEventListener("mousemove", function(e) {
 	if(this.mouse) {
 		if(rendering) { return; }
 		if(this.last_drag) {
-			dx = e.screenX - this.last_drag.screenX
-			dy = e.screenY - this.last_drag.screenY
+			var dx = e.screenX - this.last_drag.screenX
+			var dy = e.screenY - this.last_drag.screenY
 			
-			pan_x += dx * (3.5 / navcanv.width)
-			pan_y += dy * (2 / navcanv.height)
+			pan_x += dx * (MAGIC_X / navcanv.width)
+			pan_y += dy * (MAGIC_Y / navcanv.height)
 
 			if(last_render.complete) {
 
-				lx = last_render.lx * ( canvas.width / scale / 3.5 ); // The x offset of the last render we did, in pixels
-				ly = last_render.ly * ( canvas.height / scale / 2 ); // The y offset of the last render, in pixels
+				var lx = last_render.lx * ( canvas.width / scale / MAGIC_X ); // The x offset of the last render we did, in pixels
+				var ly = last_render.ly * ( canvas.height / scale / MAGIC_Y ); // The y offset of the last render, in pixels
 
-				tx = pan_x * ( canvas.width / scale / 3.5 ); // The current preview offset, in pixels
-				ty = pan_y * ( canvas.height / scale / 2 );
+				var tx = pan_x * ( canvas.width / scale / MAGIC_X ); // The current preview offset, in pixels
+				var ty = pan_y * ( canvas.height / scale / MAGIC_Y );
 
 				console.log( lx, tx )
 
-				dx = lx - tx; // The offset of the preview image
-				dy = ly - ty;
+				var ndx = lx - tx; // The offset of the preview image
+				var ndy = ly - ty;
 
 				ctx.fillStyle = "#000"
 				ctx.fillRect(0,0,canvas.width,canvas.height);
-				ctx.drawImage( last_render, dx, dy, canvas.width * (last_render.scale / scale), canvas.height * (last_render.scale / scale) )
+				ctx.drawImage( last_render, ndx, ndy, canvas.width * (last_render.scale / scale), canvas.height * (last_render.scale / scale) )
 				console.log( last_render.scale / scale )
 			}
 
@@ -240,8 +259,12 @@ navcanv.addEventListener("mousemove", function(e) {
 			ctx.beginPath();
 			navctx.strokeStyle = "#ffffff"
 			navctx.lineWidth = 2
-			navctx.rect((pan_x / 3.5) * navcanv.width, (pan_y / 2) * navcanv.height, navcanv.width * scale, navcanv.height * scale)
+			navctx.rect((pan_x / MAGIC_X) * navcanv.width, (pan_y / MAGIC_Y) * navcanv.height, navcanv.width * scale, navcanv.height * scale)
 			navctx.stroke();
+
+			xcoord.value = pan_x;
+			ycoord.value = pan_y;
+			zoom.innerText = scale;
 		}
 
 		this.last_drag = e;
@@ -255,21 +278,21 @@ navcanv.addEventListener("wheel", function(e) {
 	scale += ( ( e.deltaY * scale ) / 250 ) // The zoom rate gets slower as scale gets smaller
 	scale = Math.max(0, Math.min(1, scale)); // Clamp range to 0-1
 
-	pan_x += (((navcanv.width * _scale) - (navcanv.width * scale)) / 2) * (3.5 / navcanv.width);
-	pan_y += (((navcanv.height * _scale) - (navcanv.height * scale)) / 2) * (2 / navcanv.height);
+	pan_x += (((navcanv.width * _scale) - (navcanv.width * scale)) / 2) * (MAGIC_X / navcanv.width);
+	pan_y += (((navcanv.height * _scale) - (navcanv.height * scale)) / 2) * (MAGIC_Y / navcanv.height);
 
 	if(last_render.complete) {
 
-		lx = last_render.lx * ( canvas.width / scale / 3.5 ); // The x offset of the last render we did, in pixels
-		ly = last_render.ly * ( canvas.height / scale / 2 ); // The y offset of the last render, in pixels
+		var lx = last_render.lx * ( canvas.width / scale / MAGIC_X ); // The x offset of the last render we did, in pixels
+		var ly = last_render.ly * ( canvas.height / scale / MAGIC_Y ); // The y offset of the last render, in pixels
 
-		tx = pan_x * ( canvas.width / scale / 3.5 ); // The current preview offset, in pixels
-		ty = pan_y * ( canvas.height / scale / 2 );
+		var tx = pan_x * ( canvas.width / scale / MAGIC_X ); // The current preview offset, in pixels
+		var ty = pan_y * ( canvas.height / scale / MAGIC_Y );
 
 		console.log( lx, tx )
 
-		dx = lx - tx; // The offset of the preview image
-		dy = ly - ty;
+		var dx = lx - tx; // The offset of the preview image
+		var dy = ly - ty;
 
 		ctx.fillStyle = "#000"
 		ctx.fillRect(0,0,canvas.width,canvas.height);
@@ -288,8 +311,231 @@ navcanv.addEventListener("wheel", function(e) {
 	ctx.beginPath();
 	navctx.strokeStyle = "#ffffff"
 	navctx.lineWidth = 2
-	navctx.rect((pan_x / 3.5) * navcanv.width, (pan_y / 2) * navcanv.height, navcanv.width * scale, navcanv.height * scale)
+	navctx.rect((pan_x / MAGIC_X) * navcanv.width, (pan_y / 2) * navcanv.height, navcanv.width * scale, navcanv.height * scale)
+	navctx.stroke();
+
+	xcoord.value = pan_x;
+	ycoord.value = pan_y;
+	zoom.innerText = scale;
+})
+
+canvas.addEventListener("mousemove", function(e) {
+	if(this.mouse) {
+		if(rendering) { return; }
+		if(this.last_drag) {
+			var dx = e.screenX - this.last_drag.screenX
+			var dy = e.screenY - this.last_drag.screenY
+			
+			pan_x -= dx * (MAGIC_X / canvas.width) * scale * 2
+			pan_y -= dy * (MAGIC_Y / canvas.height) * scale * 2
+
+			if(last_render.complete) {
+
+				var lx = last_render.lx * ( canvas.width / scale / MAGIC_X ); // The x offset of the last render we did, in pixels
+				var ly = last_render.ly * ( canvas.height / scale / MAGIC_Y ); // The y offset of the last render, in pixels
+
+				var tx = pan_x * ( canvas.width / scale / MAGIC_X ); // The current preview offset, in pixels
+				var ty = pan_y * ( canvas.height / scale / MAGIC_Y );
+
+				console.log( lx, tx )
+
+				var ndx = lx - tx; // The offset of the preview image
+				var ndy = ly - ty;
+
+				ctx.fillStyle = "#000"
+				ctx.fillRect(0,0,canvas.width,canvas.height);
+				ctx.drawImage( last_render, ndx, ndy, canvas.width * (last_render.scale / scale), canvas.height * (last_render.scale / scale) )
+				console.log( last_render.scale / scale )
+			}
+
+			navctx.beginPath()
+			navctx.fillStyle = "#000"
+			navctx.fillRect(0, 0, navcanv.width, navcanv.height);
+			if(cached_result) {
+				if(cached_result.complete) {
+					navctx.drawImage(cached_result, 0, 0, navcanv.width, navcanv.height);
+				}
+			}
+			ctx.beginPath();
+			navctx.strokeStyle = "#ffffff"
+			navctx.lineWidth = 2
+			navctx.rect((pan_x / MAGIC_X) * navcanv.width, (pan_y / MAGIC_Y) * navcanv.height, navcanv.width * scale, navcanv.height * scale)
+			navctx.stroke();
+
+			xcoord.value = pan_x;
+			ycoord.value = pan_y;
+			zoom.innerText = scale;
+		}
+
+		this.last_drag = e;
+	}else {
+		this.last_drag = null;
+	}
+});
+canvas.addEventListener("wheel", function(e) {
+	if(rendering) { return; }
+	let _scale = scale; // old scale for calculations
+	scale += ( ( e.deltaY * scale ) / 250 ) // The zoom rate gets slower as scale gets smaller
+	scale = Math.max(0, Math.min(1, scale)); // Clamp range to 0-1
+
+	pan_x += (((canvas.width * _scale) - (canvas.width * scale)) / 2) * (MAGIC_X / canvas.width);
+	pan_y += (((canvas.height * _scale) - (canvas.height * scale)) / 2) * (MAGIC_Y / canvas.height);
+
+	if(last_render.complete) {
+
+		var lx = last_render.lx * ( canvas.width / scale / MAGIC_X ); // The x offset of the last render we did, in pixels
+		var ly = last_render.ly * ( canvas.height / scale / MAGIC_Y ); // The y offset of the last render, in pixels
+
+		var tx = pan_x * ( canvas.width / scale / MAGIC_X ); // The current preview offset, in pixels
+		var ty = pan_y * ( canvas.height / scale / MAGIC_Y );
+
+		console.log( lx, tx )
+
+		var dx = lx - tx; // The offset of the preview image
+		var dy = ly - ty;
+
+		ctx.fillStyle = "#000"
+		ctx.fillRect(0,0,canvas.width,canvas.height);
+		ctx.drawImage( last_render, dx, dy, canvas.width * (last_render.scale / scale), canvas.height * (last_render.scale / scale) ) // TODO: Fix zoom
+		console.log( last_render.scale / scale )
+	}
+
+	navctx.beginPath()
+	navctx.fillStyle = "#000"
+	navctx.fillRect(0, 0, navcanv.width, navcanv.height);
+	if(cached_result) {
+		if(cached_result.complete) {
+			navctx.drawImage(cached_result, 0, 0, navcanv.width, navcanv.height);
+		}
+	}
+	ctx.beginPath();
+	navctx.strokeStyle = "#ffffff"
+	navctx.lineWidth = 2
+	navctx.rect((pan_x / MAGIC_X) * navcanv.width, (pan_y / 2) * navcanv.height, navcanv.width * scale, navcanv.height * scale)
+	navctx.stroke();
+
+	xcoord.value = pan_x;
+	ycoord.value = pan_y;
+	zoom.innerText = scale;
+})
+
+// FIXME: Update so that it uses the middle of the view instead of the top left
+xcoord.addEventListener("change", function() {
+	if(rendering) { this.value = pan_x; }
+	pan_x = parseFloat(this.value)
+
+	if(last_render.complete) {
+
+		var lx = last_render.lx * ( canvas.width / scale / MAGIC_X ); // The x offset of the last render we did, in pixels
+		var ly = last_render.ly * ( canvas.height / scale / MAGIC_Y ); // The y offset of the last render, in pixels
+
+		var tx = pan_x * ( canvas.width / scale / MAGIC_X ); // The current preview offset, in pixels
+		var ty = pan_y * ( canvas.height / scale / MAGIC_Y );
+
+		console.log( lx, tx )
+
+		var ndx = lx - tx; // The offset of the preview image
+		var ndy = ly - ty;
+
+		ctx.fillStyle = "#000"
+		ctx.fillRect(0,0,canvas.width,canvas.height);
+		ctx.drawImage( last_render, ndx, ndy, canvas.width * (last_render.scale / scale), canvas.height * (last_render.scale / scale) )
+		console.log( last_render.scale / scale )
+	}
+
+	navctx.beginPath()
+	navctx.fillStyle = "#000"
+	navctx.fillRect(0, 0, navcanv.width, navcanv.height);
+	if(cached_result) {
+		if(cached_result.complete) {
+			navctx.drawImage(cached_result, 0, 0, navcanv.width, navcanv.height);
+		}
+	}
+	ctx.beginPath();
+	navctx.strokeStyle = "#ffffff"
+	navctx.lineWidth = 2
+	navctx.rect((pan_x / MAGIC_X) * navcanv.width, (pan_y / MAGIC_Y) * navcanv.height, navcanv.width * scale, navcanv.height * scale)
 	navctx.stroke();
 })
+ycoord.addEventListener("change", function() {
+	if(rendering) { this.value = pan_y; }
+	pan_y = parseFloat(this.value)
+
+	if(last_render.complete) {
+
+		var lx = last_render.lx * ( canvas.width / scale / MAGIC_X ); // The x offset of the last render we did, in pixels
+		var ly = last_render.ly * ( canvas.height / scale / MAGIC_Y ); // The y offset of the last render, in pixels
+
+		var tx = pan_x * ( canvas.width / scale / MAGIC_X ); // The current preview offset, in pixels
+		var ty = pan_y * ( canvas.height / scale / MAGIC_Y );
+
+		console.log( lx, tx )
+
+		var ndx = lx - tx; // The offset of the preview image
+		var ndy = ly - ty;
+
+		ctx.fillStyle = "#000"
+		ctx.fillRect(0,0,canvas.width,canvas.height);
+		ctx.drawImage( last_render, ndx, ndy, canvas.width * (last_render.scale / scale), canvas.height * (last_render.scale / scale) )
+		console.log( last_render.scale / scale )
+	}
+
+	navctx.beginPath()
+	navctx.fillStyle = "#000"
+	navctx.fillRect(0, 0, navcanv.width, navcanv.height);
+	if(cached_result) {
+		if(cached_result.complete) {
+			navctx.drawImage(cached_result, 0, 0, navcanv.width, navcanv.height);
+		}
+	}
+	ctx.beginPath();
+	navctx.strokeStyle = "#ffffff"
+	navctx.lineWidth = 2
+	navctx.rect((pan_x / MAGIC_X) * navcanv.width, (pan_y / MAGIC_Y) * navcanv.height, navcanv.width * scale, navcanv.height * scale)
+	navctx.stroke();
+})
+
+document.getElementById("reset").onclick = function() {
+	pan_x = 0;
+	pan_y = 0;
+	scale = 1;
+
+	if(last_render.complete) {
+
+		var lx = last_render.lx * ( canvas.width / scale / MAGIC_X ); // The x offset of the last render we did, in pixels
+		var ly = last_render.ly * ( canvas.height / scale / MAGIC_Y ); // The y offset of the last render, in pixels
+
+		var tx = pan_x * ( canvas.width / scale / MAGIC_X ); // The current preview offset, in pixels
+		var ty = pan_y * ( canvas.height / scale / MAGIC_Y );
+
+		console.log( lx, tx )
+
+		var ndx = lx - tx; // The offset of the preview image
+		var ndy = ly - ty;
+
+		ctx.fillStyle = "#000"
+		ctx.fillRect(0,0,canvas.width,canvas.height);
+		ctx.drawImage( last_render, ndx, ndy, canvas.width * (last_render.scale / scale), canvas.height * (last_render.scale / scale) )
+		console.log( last_render.scale / scale )
+	}
+
+	navctx.beginPath()
+	navctx.fillStyle = "#000"
+	navctx.fillRect(0, 0, navcanv.width, navcanv.height);
+	if(cached_result) {
+		if(cached_result.complete) {
+			navctx.drawImage(cached_result, 0, 0, navcanv.width, navcanv.height);
+		}
+	}
+	ctx.beginPath();
+	navctx.strokeStyle = "#ffffff"
+	navctx.lineWidth = 2
+	navctx.rect((pan_x / MAGIC_X) * navcanv.width, (pan_y / MAGIC_Y) * navcanv.height, navcanv.width * scale, navcanv.height * scale)
+	navctx.stroke();
+
+	xcoord.value = 0;
+	ycoord.value = 0;
+	zoom.innerText = 1;
+}
 
 DoRender(0, 0, 1);
