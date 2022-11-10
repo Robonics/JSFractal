@@ -4,7 +4,7 @@ This is a simple browser fractal exploration tool with limited performance and p
 
 **In the likely event that you do not know how to use this**
 # <u>How To Run:</u>
-* Download it onto any computer with a browser installed, you can do this by clicking the green `Code` button at the top left of the file viewer
+* Download it onto any computer with a browser installed, you can do this by clicking the green `Code` button at the top right of the file viewer
 * Unpack the zip
 * Open `index.html`, your computer should be smart enough to do this with a browser, but if not, you can Right Click > Open With > *Browser* (on windows)
 # <u>How To Use:</u>
