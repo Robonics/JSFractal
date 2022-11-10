@@ -60,7 +60,11 @@ let initial_rendering_time = new Date();
 let __interval__;
 
 let cached_result;
+let last_render = new Image();
 hue_shift = 0;
+
+let preview_x = 0;
+let preview_y = 0;
 
 function DoRender(tx, ty, z) {
 
@@ -76,6 +80,8 @@ function DoRender(tx, ty, z) {
 	rendered = 0;
 	scale_factor_x = (3.5 / resolution_x)
 	translate_factor_x = -2.5
+	preview_x = 0;
+	preview_y = 0;
 
 	scale_factor_y = (2 / resolution_y)
 	translate_factor_y = -1.5;
@@ -93,6 +99,8 @@ function DoRender(tx, ty, z) {
 	navctx.lineWidth = 2
 	navctx.rect((tx / 3.5) * navcanv.width, (ty / 2) * navcanv.height, navcanv.width * z, navcanv.height * z)
 	navctx.stroke();
+
+	ctx.setTransform(1, 0, 0, 1, 0, 0);
 
 	__interval__ = setInterval(function() {
 
@@ -137,6 +145,10 @@ function DoRender(tx, ty, z) {
 					cached_result = new Image();
 					cached_result.src = canvas.toDataURL('png');
 				}
+				last_render.src = canvas.toDataURL('png');
+				last_render.scale = z;
+				last_render.lx = tx;
+				last_render.ly = ty;
 
 				break;
 			}
@@ -187,15 +199,35 @@ render_button.addEventListener("click", function() {
 	DoRender(pan_x, pan_y, scale)
 })
 navcanv.addEventListener("mousedown", function() {this.mouse = true})
-navcanv.addEventListener("mouseup", function() {this.mouse = false})
+window.addEventListener("mouseup", function() {navcanv.mouse = false})
 navcanv.addEventListener("mousemove", function(e) {
 	if(this.mouse) {
+		if(rendering) { return; }
 		if(this.last_drag) {
 			dx = e.screenX - this.last_drag.screenX
 			dy = e.screenY - this.last_drag.screenY
 			
 			pan_x += dx * (3.5 / navcanv.width)
 			pan_y += dy * (2 / navcanv.height)
+
+			if(last_render.complete) {
+
+				lx = last_render.lx * ( canvas.width / scale / 3.5 ); // The x offset of the last render we did, in pixels
+				ly = last_render.ly * ( canvas.height / scale / 2 ); // The y offset of the last render, in pixels
+
+				tx = pan_x * ( canvas.width / scale / 3.5 ); // The current preview offset, in pixels
+				ty = pan_y * ( canvas.height / scale / 2 );
+
+				console.log( lx, tx )
+
+				dx = lx - tx; // The offset of the preview image
+				dy = ly - ty;
+
+				ctx.fillStyle = "#000"
+				ctx.fillRect(0,0,canvas.width,canvas.height);
+				ctx.drawImage( last_render, dx, dy, canvas.width * (last_render.scale / scale), canvas.height * (last_render.scale / scale) )
+				console.log( last_render.scale / scale )
+			}
 
 			navctx.beginPath()
 			navctx.fillStyle = "#000"
@@ -218,12 +250,32 @@ navcanv.addEventListener("mousemove", function(e) {
 	}
 });
 navcanv.addEventListener("wheel", function(e) {
+	if(rendering) { return; }
 	let _scale = scale; // old scale for calculations
 	scale += ( ( e.deltaY * scale ) / 250 ) // The zoom rate gets slower as scale gets smaller
 	scale = Math.max(0, Math.min(1, scale)); // Clamp range to 0-1
 
 	pan_x += (((navcanv.width * _scale) - (navcanv.width * scale)) / 2) * (3.5 / navcanv.width);
 	pan_y += (((navcanv.height * _scale) - (navcanv.height * scale)) / 2) * (2 / navcanv.height);
+
+	if(last_render.complete) {
+
+		lx = last_render.lx * ( canvas.width / scale / 3.5 ); // The x offset of the last render we did, in pixels
+		ly = last_render.ly * ( canvas.height / scale / 2 ); // The y offset of the last render, in pixels
+
+		tx = pan_x * ( canvas.width / scale / 3.5 ); // The current preview offset, in pixels
+		ty = pan_y * ( canvas.height / scale / 2 );
+
+		console.log( lx, tx )
+
+		dx = lx - tx; // The offset of the preview image
+		dy = ly - ty;
+
+		ctx.fillStyle = "#000"
+		ctx.fillRect(0,0,canvas.width,canvas.height);
+		ctx.drawImage( last_render, dx, dy, canvas.width * (last_render.scale / scale), canvas.height * (last_render.scale / scale) ) // TODO: Fix zoom
+		console.log( last_render.scale / scale )
+	}
 
 	navctx.beginPath()
 	navctx.fillStyle = "#000"
