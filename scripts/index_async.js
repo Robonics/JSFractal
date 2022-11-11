@@ -1,3 +1,11 @@
+// Setting Definition
+// FIXME: Changing this values screw up the resolution
+const MAGIC_X = 3.5;
+const MAGIC_Y = 2;
+let max_iteration = 100;
+const escape_value = 1000; // The value at which point we give up on the render // TODO: Add as a render setting
+// TODO: Organize Globals
+
 let fractals = {
 	"Burning Ship": function(sx, sy, max_iterations, should_calc_orbits ) { // FIXME: Optimize orbit calculation by not calculating it for points outside the set, as they will always go to infinity
 		let zx = sx;
@@ -5,7 +13,7 @@ let fractals = {
 
 		let iteration = 0;
 		let prev_pts = [];
-		while (zx*zx + zy*zy < 4 && iteration < max_iterations) {
+		while (zx*zx + zy*zy < escape_value && iteration < max_iterations) {
 			var _x = zx*zx - zy*zy + sx 
 			zy = Math.abs(2*zx*zy) + sy // abs returns the absolute value
 			zx = _x
@@ -15,13 +23,29 @@ let fractals = {
 		}
 		return [iteration, prev_pts];
 	},
-	"Mandelbrot Set": function( sx, sy, max_iterations, should_calc_orbits ) {
+	"Broken Burning Ship": function(sx, sy, max_iterations, should_calc_orbits ) { // FIXME: Optimize orbit calculation by not calculating it for points outside the set, as they will always go to infinity
+		let zx = sy;
+		let zy = sx;
+
+		let iteration = 0;
+		let prev_pts = [];
+		while (zx*zx + zy*zy < escape_value && iteration < max_iterations) {
+			var _x = zx*zx - zy*zy + sx 
+			zy = Math.abs(2*zx*zy) + sy // abs returns the absolute value
+			zx = _x
+			iteration++
+			if(should_calc_orbits)
+				prev_pts.push(`(${zx},${zy})`);
+		}
+		return [iteration, prev_pts];
+	},
+	"Mandelbrot Set": function( sx, sy, max_iterations, should_calc_orbits ) { // TODO: Implement user controlled variables K
 		let zx = 0;
 		let zy = 0;
 
 		let iteration = 0;
 		let prev_pts = [];
-		while (zx*zx + zy*zy <= 4 && iteration < max_iterations) {
+		while (zx*zx + zy*zy <= escape_value && iteration < max_iterations) {
 			var _x = zx*zx - zy*zy + sx;
 			zy = 2*zx*zy + sy;
 			zx = _x;
@@ -39,9 +63,9 @@ let fractals = {
 
 		let iteration = 0;
 		let prev_pts = [];
-		while (zx*zx + zy*zy <= 4 && iteration < max_iterations) {
-			zy = zy + sy * Math.sin( zx );
-			zx = zx + sx * zy;
+		while (zx*zx + zy*zy <= escape_value && iteration < max_iterations) {
+			zy += sy * Math.sin( zx );
+			zx += sx * zy;
 			iteration++;
 			if(should_calc_orbits)
 				prev_pts.push(`(${zx},${zy})`);
@@ -49,68 +73,31 @@ let fractals = {
 
 		return [iteration, prev_pts];
 	},
-	"Circle n = 2": function( sx, sy, max_iterations, should_calc_orbits ) {
-		let zx = sx;
-		let zy = sy;
+	"Test": function( sx, sy, max_iterations, should_calc_orbits ) {
+		let zx = 1;
+		let zy = 1;
 
 		let iteration = 0;
 		let prev_pts = [];
-		while (zx*zx + zy*zy <= 4 && iteration < max_iterations) {
-			zy = Math.pow( zy, 2) + sy + Math.sin(zx);
-			zx = zx + sx * Math.cos(zy);
-			zx /= sx * 2
+		while( zx*zx + zy*zy <= escape_value && iteration < max_iterations ) {
+			zy += sy * Math.sin( zx );
+			zx += sx * zy;
 			iteration++;
 			if(should_calc_orbits)
 				prev_pts.push(`(${zx},${zy})`);
 		}
-		return [iteration, prev_pts];
-	},
-	"Circle n = 13": function( sx, sy, max_iterations, should_calc_orbits ) {
-		let zx = sx;
-		let zy = sy;
 
-		let iteration = 0;
-		let prev_pts = [];
-		while (zx*zx + zy*zy <= 4 && iteration < max_iterations) {
-			zy = Math.pow( zy, 2) + sy + Math.sin(zx);
-			zx = zx + sx * Math.cos(zy);
-			zx /= sx * 13
-			iteration++;
-			if(should_calc_orbits)
-				prev_pts.push(`(${zx},${zy})`);
-		}
-		return [iteration, prev_pts];
-	},
-	"Circle^2": function( sx, sy, max_iterations, should_calc_orbits ) {
-		let zx = sx;
-		let zy = sy;
-
-		let iteration = 0;
-		let prev_pts = [];
-		while (zx*zx + zy*zy <= 4 && iteration < max_iterations) {
-			zy = Math.pow( zy, 2) + sy + Math.sin(zx);
-			zx = zx + sx * Math.cos(zy);
-			zx /= sx * sx
-			iteration++;
-			if(should_calc_orbits)
-				prev_pts.push(`(${zx},${zy})`);
-		}
-		return [iteration, prev_pts];
+		return [iteration, prev_pts]
 	}
 }
 
 let offsets = { // Offsets are in grid units, not pixels
 	"Burning Ship": { x: 0, y: 0 },
+	"Broken Burning Ship": { x: 0, y: 0 },
 	"Mandelbrot Set": { x: 0.3, y: 0.45 },
 	"Chirikov Map": { x: 0, y: 0 },
-	"Circle n = 2": { x: 0, y: 0 },
-	"Circle n = 13": { x: 0, y: 0 },
-	"Circle^2": { x: 0, y: 0 }
+	"Test": { x: 0, y: 0 }
 }
-
-// FIXME: Changing this values screw up the resolution
-const MAGIC_X = 3.5;
-const MAGIC_Y = 2;
 
 const canvas = document.querySelector('#main')
 var ctx = canvas.getContext('2d')
@@ -144,7 +131,6 @@ function hslToHex(h, s, l) {
 }
 
 var rendered = 0;
-let max_iteration = 100;
 
 let x = 0;
 let y = 0;
@@ -395,7 +381,7 @@ navcanv.addEventListener("wheel", function(e) {
 	if(rendering) { return; }
 	let _scale = scale; // old scale for calculations
 	scale += ( ( e.deltaY * scale ) / 250 ) // The zoom rate gets slower as scale gets smaller
-	scale = Math.max(0, Math.min(2, scale)); // Clamp range to 0-2
+	scale = Math.max(0, Math.min(5, scale)); // Clamp range to 0-5
 
 	pan_x += (((navcanv.width * _scale) - (navcanv.width * scale)) / 2) * (MAGIC_X / navcanv.width);
 	pan_y += (((navcanv.height * _scale) - (navcanv.height * scale)) / 2) * (MAGIC_Y / navcanv.height);
@@ -489,7 +475,7 @@ canvas.addEventListener("wheel", function(e) {
 	if(rendering) { return; }
 	let _scale = scale; // old scale for calculations
 	scale += ( ( e.deltaY * scale ) / 250 ) // The zoom rate gets slower as scale gets smaller
-	scale = Math.max(0, Math.min(2, scale)); // Clamp range to 0-2
+	scale = Math.max(0, Math.min(5, scale)); // Clamp range to 0-5
 
 	pan_x += (((canvas.width * _scale) - (canvas.width * scale)) / 2) * (MAGIC_X / canvas.width);
 	pan_y += (((canvas.height * _scale) - (canvas.height * scale)) / 2) * (MAGIC_Y / canvas.height);
