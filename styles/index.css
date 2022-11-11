@@ -29,3 +29,60 @@ canvas {
 	display: flex;
 	flex-direction: column;
 }
+
+button {
+	margin-top: 5px;
+	background-color: rgb(20, 20, 20);
+	color: white;
+	border: 1px solid white;
+}
+button:hover {
+	background-color: rgb(45, 45, 45);
+	color: rgb(166, 225, 255);
+}
+
+input {
+	border-radius: 0px;
+	border: 1px solid white;
+	background-color: rgb(20, 20, 20);
+	color: white;
+}
+input[type="range"] {
+	-webkit-appearance: none;
+	appearance: none;
+	border: none;
+	background-color: transparent;
+	--height: 15px;
+	height: var(--height);
+	position: relative;
+}
+input::before {
+	position: absolute;
+	content: "";
+	left: 0;
+	top: 4px;
+	right: 0;
+	bottom: 4px;
+
+	border-radius: 2px;
+
+	background-color: gray;
+	z-index: 0;
+}
+input[type="range"]::-webkit-slider-thumb {
+	position: relative;
+	-webkit-appearance: none;
+	appearance: none;
+	background-color: white;
+	border-radius: 50%;
+
+	width: var(--height);
+	height: var(--height);
+
+	z-index: 999 !important;
+}
+select {
+	border: 1px solid white;
+	background-color: rgb(20, 20, 20);
+	color: white;
+}
