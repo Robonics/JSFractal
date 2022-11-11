@@ -1,83 +1,101 @@
 let fractals = {
-	"Burning Ship": function(sx, sy, max_iterations) {
+	"Burning Ship": function(sx, sy, max_iterations, should_calc_orbits ) { // FIXME: Optimize orbit calculation by not calculating it for points outside the set, as they will always go to infinity
 		let zx = sx;
 		let zy = sy;
 
 		let iteration = 0;
+		let prev_pts = [];
 		while (zx*zx + zy*zy < 4 && iteration < max_iterations) {
 			var _x = zx*zx - zy*zy + sx 
 			zy = Math.abs(2*zx*zy) + sy // abs returns the absolute value
 			zx = _x
 			iteration++
+			if(should_calc_orbits)
+				prev_pts.push(`(${zx},${zy})`);
 		}
-		return iteration;
+		return [iteration, prev_pts];
 	},
-	"Mandelbrot Set": function( sx, sy, max_iterations ) {
+	"Mandelbrot Set": function( sx, sy, max_iterations, should_calc_orbits ) {
 		let zx = 0;
 		let zy = 0;
 
 		let iteration = 0;
+		let prev_pts = [];
 		while (zx*zx + zy*zy <= 4 && iteration < max_iterations) {
 			var _x = zx*zx - zy*zy + sx;
 			zy = 2*zx*zy + sy;
 			zx = _x;
 			iteration++;
+			if(should_calc_orbits)
+				prev_pts.push(`(${zx},${zy})`);
 		}
 
-		return iteration;
+		return [iteration, prev_pts];
 	}
 	,
-	"Chirikov Map": function( sx, sy, max_iterations ) {
+	"Chirikov Map": function( sx, sy, max_iterations, should_calc_orbits ) {
 		let zx = sx;
 		let zy = sy;
 
 		let iteration = 0;
+		let prev_pts = [];
 		while (zx*zx + zy*zy <= 4 && iteration < max_iterations) {
 			zy = zy + sy * Math.sin( zx );
 			zx = zx + sx * zy;
 			iteration++;
+			if(should_calc_orbits)
+				prev_pts.push(`(${zx},${zy})`);
 		}
 
-		return iteration;
+		return [iteration, prev_pts];
 	},
-	"Circle n = 2": function( sx, sy, max_iterations ) {
+	"Circle n = 2": function( sx, sy, max_iterations, should_calc_orbits ) {
 		let zx = sx;
 		let zy = sy;
 
 		let iteration = 0;
+		let prev_pts = [];
 		while (zx*zx + zy*zy <= 4 && iteration < max_iterations) {
 			zy = Math.pow( zy, 2) + sy + Math.sin(zx);
 			zx = zx + sx * Math.cos(zy);
 			zx /= sx * 2
 			iteration++;
+			if(should_calc_orbits)
+				prev_pts.push(`(${zx},${zy})`);
 		}
-		return iteration;
+		return [iteration, prev_pts];
 	},
-	"Circle n = 13": function( sx, sy, max_iterations ) {
+	"Circle n = 13": function( sx, sy, max_iterations, should_calc_orbits ) {
 		let zx = sx;
 		let zy = sy;
 
 		let iteration = 0;
+		let prev_pts = [];
 		while (zx*zx + zy*zy <= 4 && iteration < max_iterations) {
 			zy = Math.pow( zy, 2) + sy + Math.sin(zx);
 			zx = zx + sx * Math.cos(zy);
 			zx /= sx * 13
 			iteration++;
+			if(should_calc_orbits)
+				prev_pts.push(`(${zx},${zy})`);
 		}
-		return iteration;
+		return [iteration, prev_pts];
 	},
-	"Circle^2": function( sx, sy, max_iterations ) {
+	"Circle^2": function( sx, sy, max_iterations, should_calc_orbits ) {
 		let zx = sx;
 		let zy = sy;
 
 		let iteration = 0;
+		let prev_pts = [];
 		while (zx*zx + zy*zy <= 4 && iteration < max_iterations) {
 			zy = Math.pow( zy, 2) + sy + Math.sin(zx);
 			zx = zx + sx * Math.cos(zy);
 			zx /= sx * sx
 			iteration++;
+			if(should_calc_orbits)
+				prev_pts.push(`(${zx},${zy})`);
 		}
-		return iteration;
+		return [iteration, prev_pts];
 	}
 }
 
@@ -125,15 +143,6 @@ function hslToHex(h, s, l) {
 	return `#${f(0)}${f(8)}${f(4)}`;
 }
 
-function complexPointToCanvasPoint(x, y) {
-	nx = (x + infinity_threshold) / (2 * infinity_threshold);
-	ny = ((y + infinity_threshold) / (2 * infinity_threshold));
-	nx *= resolution;
-	ny *= resolution;
-	ny -= resolution
-	return [nx, -ny];
-}
-
 var rendered = 0;
 let max_iteration = 100;
 
@@ -165,9 +174,7 @@ for (var fractal in fractals) {
 		option.selected = true;
 		cur_fractal = fractal;
 	}
-
 	dropdown.appendChild( option )
-
 	i++;
 }
 dropdown.addEventListener("change", function() {
@@ -175,7 +182,24 @@ dropdown.addEventListener("change", function() {
 	cached_result = null;
 })
 
-function DoRender(tx, ty, z) { // TODO: Orbit calculations
+let calc_orbits = false;
+
+function CalculateOrbits( pts, iteration ) {
+	if(iteration >= max_iteration) {
+		loop: for( var i1 = 0; i1 < pts.length; i1++ ) {
+			for( var i2 = 0; i2 < i1; i2++) {
+				if( pts[i1] == pts[i2] ) {
+					return i1 - i2;
+				}
+			}
+		}
+	}
+	return Infinity;
+} 
+
+function DoRender(tx, ty, z) {
+
+	calc_orbits = document.getElementById("orbit").checked;
 
 	hue_shift = document.getElementById("hue").value * 1;
 	max_iteration = document.getElementById("itr2").value * 1;
@@ -214,20 +238,29 @@ function DoRender(tx, ty, z) { // TODO: Orbit calculations
 			var sx = (x * scale_factor_x * z) + translate_factor_x + tx + offsets[cur_fractal].x;
 			var sy = (y * scale_factor_y * z) + translate_factor_y + ty + offsets[cur_fractal].y;
 
-			let iteration = fractals[cur_fractal](sx, sy, max_iteration );
-
-			// while (zx*zx + zy*zy < 4 && iteration < max_iteration) {
-			// 	var _x = zx*zx - zy*zy + sx 
-			// 	zy = Math.abs(2*zx*zy) + sy // abs returns the absolute value
-			// 	zx = _x
-			// 	iteration++
-			// }
+			var results = fractals[cur_fractal](sx, sy, max_iteration, calc_orbits );
+			let iteration = results[0];
+			let pts = results[1];
+			let orbit_period = Infinity;
+			if(calc_orbits) {
+				orbit_period = CalculateOrbits( pts, iteration );
+			}
 
 			ctx.beginPath()
-			if(iteration >= max_iteration) { // Belongs to the set
-				ctx.fillStyle = "#000"
+			if( calc_orbits ) {
+				if( iteration < max_iteration ) { // Outside the set
+					ctx.fillStyle = hslToHex( 0, 0, 20 + (iteration / max_iteration) * 80);
+				}else if( orbit_period >= max_iteration ) {
+					ctx.fillStyle = "#000"
+				}else {
+					ctx.fillStyle = hslToHex(((orbit_period / 10) * 360) + hue_shift , 85, 60)
+				}
 			}else {
-				ctx.fillStyle = hslToHex(((iteration / max_iteration) * 360) + hue_shift , 85, 60)
+				if(iteration >= max_iteration) { // Belongs to the set
+					ctx.fillStyle = "#000"
+				}else {
+					ctx.fillStyle = hslToHex(((iteration / max_iteration) * 360) + hue_shift , 85, 60)
+				}
 			}
 			ctx.rect(x, y, 1, 1);
 			ctx.fill();
@@ -326,15 +359,12 @@ navcanv.addEventListener("mousemove", function(e) {
 				var tx = pan_x * ( canvas.width / scale / MAGIC_X ); // The current preview offset, in pixels
 				var ty = pan_y * ( canvas.height / scale / MAGIC_Y );
 
-				console.log( lx, tx )
-
 				var ndx = lx - tx; // The offset of the preview image
 				var ndy = ly - ty;
 
 				ctx.fillStyle = "#000"
 				ctx.fillRect(0,0,canvas.width,canvas.height);
 				ctx.drawImage( last_render, ndx, ndy, canvas.width * (last_render.scale / scale), canvas.height * (last_render.scale / scale) )
-				console.log( last_render.scale / scale )
 			}
 
 			navctx.beginPath()
@@ -378,15 +408,12 @@ navcanv.addEventListener("wheel", function(e) {
 		var tx = pan_x * ( canvas.width / scale / MAGIC_X ); // The current preview offset, in pixels
 		var ty = pan_y * ( canvas.height / scale / MAGIC_Y );
 
-		console.log( lx, tx )
-
 		var dx = lx - tx; // The offset of the preview image
 		var dy = ly - ty;
 
 		ctx.fillStyle = "#000"
 		ctx.fillRect(0,0,canvas.width,canvas.height);
 		ctx.drawImage( last_render, dx, dy, canvas.width * (last_render.scale / scale), canvas.height * (last_render.scale / scale) ) // TODO: Fix zoom
-		console.log( last_render.scale / scale )
 	}
 
 	navctx.beginPath()
@@ -426,15 +453,12 @@ canvas.addEventListener("mousemove", function(e) {
 				var tx = pan_x * ( canvas.width / scale / MAGIC_X ); // The current preview offset, in pixels
 				var ty = pan_y * ( canvas.height / scale / MAGIC_Y );
 
-				console.log( lx, tx )
-
 				var ndx = lx - tx; // The offset of the preview image
 				var ndy = ly - ty;
 
 				ctx.fillStyle = "#000"
 				ctx.fillRect(0,0,canvas.width,canvas.height);
 				ctx.drawImage( last_render, ndx, ndy, canvas.width * (last_render.scale / scale), canvas.height * (last_render.scale / scale) )
-				console.log( last_render.scale / scale )
 			}
 
 			navctx.beginPath()
@@ -478,15 +502,12 @@ canvas.addEventListener("wheel", function(e) {
 		var tx = pan_x * ( canvas.width / scale / MAGIC_X ); // The current preview offset, in pixels
 		var ty = pan_y * ( canvas.height / scale / MAGIC_Y );
 
-		console.log( lx, tx )
-
 		var dx = lx - tx; // The offset of the preview image
 		var dy = ly - ty;
 
 		ctx.fillStyle = "#000"
 		ctx.fillRect(0,0,canvas.width,canvas.height);
 		ctx.drawImage( last_render, dx, dy, canvas.width * (last_render.scale / scale), canvas.height * (last_render.scale / scale) ) // TODO: Fix zoom
-		console.log( last_render.scale / scale )
 	}
 
 	navctx.beginPath()
@@ -521,15 +542,12 @@ xcoord.addEventListener("change", function() {
 		var tx = pan_x * ( canvas.width / scale / MAGIC_X ); // The current preview offset, in pixels
 		var ty = pan_y * ( canvas.height / scale / MAGIC_Y );
 
-		console.log( lx, tx )
-
 		var ndx = lx - tx; // The offset of the preview image
 		var ndy = ly - ty;
 
 		ctx.fillStyle = "#000"
 		ctx.fillRect(0,0,canvas.width,canvas.height);
 		ctx.drawImage( last_render, ndx, ndy, canvas.width * (last_render.scale / scale), canvas.height * (last_render.scale / scale) )
-		console.log( last_render.scale / scale )
 	}
 
 	navctx.beginPath()
@@ -558,15 +576,12 @@ ycoord.addEventListener("change", function() {
 		var tx = pan_x * ( canvas.width / scale / MAGIC_X ); // The current preview offset, in pixels
 		var ty = pan_y * ( canvas.height / scale / MAGIC_Y );
 
-		console.log( lx, tx )
-
 		var ndx = lx - tx; // The offset of the preview image
 		var ndy = ly - ty;
 
 		ctx.fillStyle = "#000"
 		ctx.fillRect(0,0,canvas.width,canvas.height);
 		ctx.drawImage( last_render, ndx, ndy, canvas.width * (last_render.scale / scale), canvas.height * (last_render.scale / scale) )
-		console.log( last_render.scale / scale )
 	}
 
 	navctx.beginPath()
@@ -597,15 +612,12 @@ document.getElementById("reset").onclick = function() {
 		var tx = pan_x * ( canvas.width / scale / MAGIC_X ); // The current preview offset, in pixels
 		var ty = pan_y * ( canvas.height / scale / MAGIC_Y );
 
-		console.log( lx, tx )
-
 		var ndx = lx - tx; // The offset of the preview image
 		var ndy = ly - ty;
 
 		ctx.fillStyle = "#000"
 		ctx.fillRect(0,0,canvas.width,canvas.height);
 		ctx.drawImage( last_render, ndx, ndy, canvas.width * (last_render.scale / scale), canvas.height * (last_render.scale / scale) )
-		console.log( last_render.scale / scale )
 	}
 
 	navctx.beginPath()
