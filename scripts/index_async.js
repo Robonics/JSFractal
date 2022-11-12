@@ -3,100 +3,166 @@
 const MAGIC_X = 3.5;
 const MAGIC_Y = 2;
 let max_iteration = 100;
+let calc_orbits = false;
 const escape_value = 1000; // The value at which point we give up on the render // TODO: Add as a render setting
 // TODO: Organize Globals
 
 let fractals = {
-	"Burning Ship": function(sx, sy, max_iterations, should_calc_orbits ) { // FIXME: Optimize orbit calculation by not calculating it for points outside the set, as they will always go to infinity
+	"Burning Ship": function(sx, sy ) { // FIXME: Optimize orbit calculation by not calculating it for points outside the set, as they will always go to infinity
 		let zx = sx;
 		let zy = sy;
 
 		let iteration = 0;
-		let prev_pts = [];
-		while (zx*zx + zy*zy < escape_value && iteration < max_iterations) {
+		let min = 1e15;
+		while (zx*zx + zy*zy < escape_value && iteration < max_iteration) {
 			var _x = zx*zx - zy*zy + sx 
 			zy = Math.abs(2*zx*zy) + sy // abs returns the absolute value
 			zx = _x
 			iteration++
-			if(should_calc_orbits)
-				prev_pts.push(`(${zx},${zy})`);
+			if(calc_orbits)
+				min = Math.min(min, Math.sqrt( Math.pow(zx - sx, 2) + Math.pow(zy - sy, 2) ) );
 		}
-		return [iteration, prev_pts];
+		return [iteration, min];
 	},
-	"Broken Burning Ship": function(sx, sy, max_iterations, should_calc_orbits ) { // FIXME: Optimize orbit calculation by not calculating it for points outside the set, as they will always go to infinity
+	"Broken Burning Ship": function(sx, sy ) { // FIXME: Optimize orbit calculation by not calculating it for points outside the set, as they will always go to infinity
 		let zx = sy;
 		let zy = sx;
 
 		let iteration = 0;
-		let prev_pts = [];
-		while (zx*zx + zy*zy < escape_value && iteration < max_iterations) {
+		let min = 1e15;
+		while (zx*zx + zy*zy < escape_value && iteration < max_iteration) {
 			var _x = zx*zx - zy*zy + sx 
 			zy = Math.abs(2*zx*zy) + sy // abs returns the absolute value
 			zx = _x
 			iteration++
-			if(should_calc_orbits)
-				prev_pts.push(`(${zx},${zy})`);
+			if(calc_orbits)
+				min = Math.min(min, Math.sqrt( Math.pow(zx - sx, 2) + Math.pow(zy - sy, 2) ) );
 		}
-		return [iteration, prev_pts];
+		return [iteration, min];
 	},
-	"Mandelbrot Set": function( sx, sy, max_iterations, should_calc_orbits ) { // TODO: Implement user controlled variables K
+	"Mandelbrot Set": function( sx, sy ) { // TODO: Implement user controlled variables K
 		let zx = 0;
 		let zy = 0;
 
 		let iteration = 0;
-		let prev_pts = [];
-		while (zx*zx + zy*zy <= escape_value && iteration < max_iterations) {
+		let min = 1e15;
+		while (zx*zx + zy*zy <= escape_value && iteration < max_iteration) {
 			var _x = zx*zx - zy*zy + sx;
 			zy = 2*zx*zy + sy;
 			zx = _x;
 			iteration++;
-			if(should_calc_orbits)
-				prev_pts.push(`(${zx},${zy})`);
+			if(calc_orbits)
+				min = Math.min(min, Math.sqrt( zx*zx + zy*zy ) );
 		}
 
-		return [iteration, prev_pts];
+		return [iteration, min];
 	}
 	,
-	"Chirikov Map": function( sx, sy, max_iterations, should_calc_orbits ) {
+	"Chirikov Map": function( sx, sy ) {
 		let zx = sx;
 		let zy = sy;
 
 		let iteration = 0;
-		let prev_pts = [];
-		while (zx*zx + zy*zy <= escape_value && iteration < max_iterations) {
+		let min = 1e15;
+		while (zx*zx + zy*zy <= escape_value && iteration < max_iteration) {
 			zy += sy * Math.sin( zx );
 			zx += sx * zy;
 			iteration++;
-			if(should_calc_orbits)
-				prev_pts.push(`(${zx},${zy})`);
+			if(calc_orbits)
+				min = Math.min(min, Math.sqrt( zx*zx + zy*zy ) );
 		}
 
 		return [iteration, prev_pts];
 	},
-	"Test": function( sx, sy, max_iterations, should_calc_orbits ) {
-		let zx = 1;
-		let zy = 1;
+	"Henon": function( sx, sy ) {
+		let zx = sx;
+		let zy = sy;
 
 		let iteration = 0;
-		let prev_pts = [];
-		while( zx*zx + zy*zy <= escape_value && iteration < max_iterations ) {
-			zy += sy * Math.sin( zx );
-			zx += sx * zy;
+		let min = 1e15;
+		while( zx*zx + zy*zy <= escape_value && iteration < max_iteration ) {
+			var _x = 1 - sx*zx*zx + zy;
+			zy = sy * zx;
+			zx = _x;
+
 			iteration++;
-			if(should_calc_orbits)
-				prev_pts.push(`(${zx},${zy})`);
+			if(calc_orbits)
+				min = Math.min(min, Math.sqrt( zx*zx + zy*zy ) );
 		}
 
-		return [iteration, prev_pts]
+		return [iteration, min]
+	},
+	"Tricorn": function( sx, sy ) {
+		let zx = sx;
+		let zy = sy;
+
+		let iteration = 0;
+		let min = 1e15;
+		while( zx*zx + zy*zy <= escape_value && iteration < max_iteration ) {
+			var _x = zx*zx - zy*zy + sx
+			zy = -2*zx*zy + sy
+			zx = _x
+
+			iteration++;
+			if(calc_orbits)
+				min = Math.min(min, Math.sqrt( zx*zx + zy*zy ) );
+		}
+
+		return [iteration, min]
+	},
+	"Mandelbox": function( sx, sy ) {
+
+		const K = 2.5;
+
+		let zx = sx;
+		let zy = sy;
+
+		let iteration = 0;
+		let min = 1e15;
+		while( zx*zx + zy*zy <= escape_value && iteration < max_iteration ) {
+			// X
+			if(zx > 1) {
+				zx = 2 - zx
+			}else if(zx < -1) {
+				zx = -2 - zx
+			}
+			// Y
+			if(zy > 1) {
+				zy = 2 - zy
+			}else if(zy < -1) {
+				zy = -2 - zy
+			}
+
+			// Calculate Magnitude
+			var mag = Math.sqrt( zx*zx + zy*zy )
+			if( mag < 0.5 ) {
+				zx *= 4;
+				zy *= 4;
+			}else if(mag < 1) {
+				zx /= mag * mag;
+				zy /= mag * mag;
+			}
+
+			zx = K * zx + sx;
+			zy = K * zy + sy;
+
+			iteration++;
+			if(calc_orbits)
+				min = Math.min(min, Math.sqrt( zx*zx + zy*zy ) );
+		}
+
+		return [iteration, min]
 	}
 }
 
 let offsets = { // Offsets are in grid units, not pixels
-	"Burning Ship": { x: 0, y: 0 },
-	"Broken Burning Ship": { x: 0, y: 0 },
-	"Mandelbrot Set": { x: 0.3, y: 0.45 },
-	"Chirikov Map": { x: 0, y: 0 },
-	"Test": { x: 0, y: 0 }
+	"Burning Ship": { x: 0, y: 0, s: 1 },
+	"Broken Burning Ship": { x: 0, y: 0, s: 1 },
+	"Mandelbrot Set": { x: 0.3, y: 0.45, s: 1.1 },
+	"Chirikov Map": { x: -7.125, y: -3.75, s: 5 },
+	"Henon": { x: 0, y: 0, s: 1.5 },
+	"Tricorn": { x: 0, y: 0, s: 1.2 },
+	"Mandelbox": { x: -6.6, y: -3.3, s: 5 }
 }
 
 const canvas = document.querySelector('#main')
@@ -164,24 +230,16 @@ for (var fractal in fractals) {
 	i++;
 }
 dropdown.addEventListener("change", function() {
+	if( rendering ) {
+		window.clearInterval(__interval__);
+		rendering = false;
+	}
 	cur_fractal = this.value;
 	cached_result = null;
+	pan_x = 0;
+	pan_y = 0;
+	scale = offsets[cur_fractal].s;
 })
-
-let calc_orbits = false;
-
-function CalculateOrbits( pts, iteration ) {
-	if(iteration >= max_iteration) {
-		loop: for( var i1 = 0; i1 < pts.length; i1++ ) {
-			for( var i2 = 0; i2 < i1; i2++) {
-				if( pts[i1] == pts[i2] ) {
-					return i1 - i2;
-				}
-			}
-		}
-	}
-	return Infinity;
-} 
 
 function DoRender(tx, ty, z) {
 
@@ -224,22 +282,18 @@ function DoRender(tx, ty, z) {
 			var sx = (x * scale_factor_x * z) + translate_factor_x + tx + offsets[cur_fractal].x;
 			var sy = (y * scale_factor_y * z) + translate_factor_y + ty + offsets[cur_fractal].y;
 
-			var results = fractals[cur_fractal](sx, sy, max_iteration, calc_orbits );
+			var results = fractals[cur_fractal](sx, sy );
 			let iteration = results[0];
-			let pts = results[1];
-			let orbit_period = Infinity;
-			if(calc_orbits) {
-				orbit_period = CalculateOrbits( pts, iteration );
-			}
+			let min_distance = results[1];
 
 			ctx.beginPath()
 			if( calc_orbits ) {
 				if( iteration < max_iteration ) { // Outside the set
 					ctx.fillStyle = hslToHex( 0, 0, 20 + (iteration / max_iteration) * 80);
-				}else if( orbit_period >= max_iteration ) {
+				}else if( min_distance >= max_iteration ) {
 					ctx.fillStyle = "#000"
 				}else {
-					ctx.fillStyle = hslToHex(((orbit_period / 10) * 360) + hue_shift , 85, 60)
+					ctx.fillStyle = hslToHex(((min_distance * 2) * 360) + hue_shift , 85, 60)
 				}
 			}else {
 				if(iteration >= max_iteration) { // Belongs to the set
