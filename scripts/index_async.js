@@ -319,7 +319,6 @@ dropdown.addEventListener("change", function() {
 		el.appendChild(l);
 		el.appendChild(i);
 	}
-	el.innerHTML += "<div class=\"divider\"></div>"
 })
 
 function DoRender(tx, ty, z) {
