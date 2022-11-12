@@ -73,6 +73,7 @@ let fractals = {
 
 		let iteration = 0;
 		let min = 1e15;
+		let min_axis = 1e15;
 		while (zx*zx + zy*zy <= escape_value && iteration < max_iteration) {
 			zy += sy * Math.sin( zx ) * arg["K"];
 			zx += sx * zy;
