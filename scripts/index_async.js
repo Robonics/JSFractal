@@ -72,7 +72,7 @@ let fractals = {
 				min = Math.min(min, Math.sqrt( zx*zx + zy*zy ) );
 		}
 
-		return [iteration, prev_pts];
+		return [iteration, min];
 	},
 	"Henon": function( sx, sy ) {
 		let zx = sx;
