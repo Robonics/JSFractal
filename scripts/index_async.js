@@ -3,122 +3,137 @@
 const MAGIC_X = 3.5;
 const MAGIC_Y = 2;
 let max_iteration = 100;
-let calc_orbits = false;
+const calc_fancy_render = true;
 const escape_value = 1000; // The value at which point we give up on the render // TODO: Add as a render setting
 // TODO: Organize Globals
 
 let fractals = {
-	"Burning Ship": function(sx, sy ) { // FIXME: Optimize orbit calculation by not calculating it for points outside the set, as they will always go to infinity
+	"Burning Ship": function(sx, sy, ox, oy, para ) { // FIXME: Optimize orbit calculation by not calculating it for points outside the set, as they will always go to infinity
 		let zx = sx;
 		let zy = sy;
 
 		let iteration = 0;
 		let min = 1e15;
+		let min_axis = 1e15;
 		while (zx*zx + zy*zy < escape_value && iteration < max_iteration) {
 			var _x = zx*zx - zy*zy + sx 
 			zy = Math.abs(2*zx*zy) + sy // abs returns the absolute value
 			zx = _x
 			iteration++
-			if(calc_orbits)
-				min = Math.min(min, Math.sqrt( Math.pow(zx - sx, 2) + Math.pow(zy - sy, 2) ) );
+			if(calc_fancy_render)
+				min = Math.min(min, Math.sqrt( Math.pow(ox - zx, 2) + Math.pow(oy - zy, 2) ) );
+				min_axis = Math.min(min_axis, Math.min( Math.abs(zx + ox), Math.abs(zy + oy)  )); // Implementation of pickover stalk
 		}
-		return [iteration, min];
+		return [iteration, min, min_axis];
 	},
-	"Broken Burning Ship": function(sx, sy ) { // FIXME: Optimize orbit calculation by not calculating it for points outside the set, as they will always go to infinity
+	"Broken Burning Ship": function(sx, sy, ox, oy, para ) { // FIXME: Optimize orbit calculation by not calculating it for points outside the set, as they will always go to infinity
 		let zx = sy;
 		let zy = sx;
 
 		let iteration = 0;
 		let min = 1e15;
+		let min_axis = 1e15;
 		while (zx*zx + zy*zy < escape_value && iteration < max_iteration) {
 			var _x = zx*zx - zy*zy + sx 
 			zy = Math.abs(2*zx*zy) + sy // abs returns the absolute value
 			zx = _x
 			iteration++
-			if(calc_orbits)
-				min = Math.min(min, Math.sqrt( Math.pow(zx - sx, 2) + Math.pow(zy - sy, 2) ) );
+			if(calc_fancy_render)
+				min = Math.min(min, Math.sqrt( Math.pow(ox - zx, 2) + Math.pow(oy - zy, 2) ) );
+				min_axis = Math.min(min_axis, Math.min( Math.abs(zx + ox), Math.abs(zy + oy)  )); // Implementation of pickover stalk
 		}
-		return [iteration, min];
+		return [iteration, min, min_axis];
 	},
-	"Mandelbrot Set": function( sx, sy ) { // TODO: Implement user controlled variables K
+	"Mandelbrot Set": function( sx, sy, ox, oy, para ) { // TODO: Implement user controlled variables K
 		let zx = 0;
 		let zy = 0;
 
+		let d = para["d"]
+
 		let iteration = 0;
 		let min = 1e15;
+		let min_axis = 1e15;
 		while (zx*zx + zy*zy <= escape_value && iteration < max_iteration) {
-			var _x = zx*zx - zy*zy + sx;
-			zy = 2*zx*zy + sy;
-			zx = _x;
+			var _x = Math.pow(zx*zx+zy*zy, d/2) * Math.cos(d * Math.atan2(zy, zx)) + sx
+			zy = Math.pow(zx*zx+zy*zy, d/2) * Math.sin(d * Math.atan2(zy, zx)) + sy
+			zx = _x 
+ 
 			iteration++;
-			if(calc_orbits)
-				min = Math.min(min, Math.sqrt( zx*zx + zy*zy ) );
+			if(calc_fancy_render)
+				min = Math.min(min, Math.sqrt( Math.pow(ox - zx, 2) + Math.pow(oy - zy, 2) ) );
+				min_axis = Math.min(min_axis, Math.min( Math.abs(zx + ox), Math.abs(zy + oy)  )); // Implementation of pickover stalk
 		}
 
-		return [iteration, min];
+		return [iteration, min, min_axis];
 	}
 	,
-	"Chirikov Map": function( sx, sy ) {
+	"Chirikov Map": function( sx, sy, ox, oy, arg ) {
 		let zx = sx;
 		let zy = sy;
 
 		let iteration = 0;
 		let min = 1e15;
 		while (zx*zx + zy*zy <= escape_value && iteration < max_iteration) {
-			zy += sy * Math.sin( zx );
+			zy += sy * Math.sin( zx ) * arg["K"];
 			zx += sx * zy;
 			iteration++;
-			if(calc_orbits)
-				min = Math.min(min, Math.sqrt( zx*zx + zy*zy ) );
+			if(calc_fancy_render)
+				min = Math.min(min, Math.sqrt( Math.pow(ox - zx, 2) + Math.pow(oy - zy, 2) ) );
+				min_axis = Math.min(min_axis, Math.min( Math.abs(zx + ox), Math.abs(zy + oy)  )); // Implementation of pickover stalk
 		}
 
-		return [iteration, min];
+		return [iteration, min, min_axis];
 	},
-	"Henon": function( sx, sy ) {
+	"Henon": function( sx, sy, ox, oy, para ) {
 		let zx = sx;
 		let zy = sy;
 
 		let iteration = 0;
 		let min = 1e15;
+		let min_axis = 1e15;
 		while( zx*zx + zy*zy <= escape_value && iteration < max_iteration ) {
 			var _x = 1 - sx*zx*zx + zy;
 			zy = sy * zx;
 			zx = _x;
 
 			iteration++;
-			if(calc_orbits)
-				min = Math.min(min, Math.sqrt( zx*zx + zy*zy ) );
+			if(calc_fancy_render)
+				min = Math.min(min, Math.sqrt( Math.pow(ox - zx, 2) + Math.pow(oy - zy, 2) ) );
+				min_axis = Math.min(min_axis, Math.min( Math.abs(zx + ox), Math.abs(zy + oy)  )); // Implementation of pickover stalk
 		}
 
-		return [iteration, min]
+		return [iteration, min, min_axis]
 	},
-	"Tricorn": function( sx, sy ) {
+	"Tricorn": function( sx, sy, ox, oy, para ) {
 		let zx = sx;
 		let zy = sy;
 
 		let iteration = 0;
 		let min = 1e15;
+		let min_axis = 1e15;
 		while( zx*zx + zy*zy <= escape_value && iteration < max_iteration ) {
 			var _x = zx*zx - zy*zy + sx
 			zy = -2*zx*zy + sy
 			zx = _x
 
 			iteration++;
-			if(calc_orbits)
-				min = Math.min(min, Math.sqrt( zx*zx + zy*zy ) );
+			if(calc_fancy_render)
+				min = Math.min(min, Math.sqrt( Math.pow(ox - zx, 2) + Math.pow(oy - zy, 2) ) );
+				min_axis = Math.min(min_axis, Math.min( Math.abs(zx + ox), Math.abs(zy + oy)  )); // Implementation of pickover stalk
 		}
 
-		return [iteration, min]
+		return [iteration, min, min_axis]
 	},
-	"Mandelbox": function( sx, sy ) {
+	"Mandelbox": function( sx, sy, ox, oy, para ) {
 
-		const K = 2.5;
+		const K = para["K"];
 
 		let zx = sx;
 		let zy = sy;
 
 		let iteration = 0;
 		let min = 1e15;
+		let min_axis = 1e15;
 		while( zx*zx + zy*zy <= escape_value && iteration < max_iteration ) {
 			// X
 			if(zx > 1) {
@@ -147,11 +162,34 @@ let fractals = {
 			zy = K * zy + sy;
 
 			iteration++;
-			if(calc_orbits)
-				min = Math.min(min, Math.sqrt( zx*zx + zy*zy ) );
+			if(calc_fancy_render)
+				min = Math.min(min, Math.sqrt( Math.pow(ox - zx, 2) + Math.pow(oy - zy, 2) ) );
+				min_axis = Math.min(min_axis, Math.min( Math.abs(zx + ox), Math.abs(zy + oy)  )); // Implementation of pickover stalk
 		}
 
-		return [iteration, min]
+		return [iteration, min, min_axis]
+	},
+	"Bogdanov Map": function( sx, sy, ox, oy, para ) {
+		let zx = sx;
+		let zy = sy;
+
+		let epsilon = 0;
+		let kappa = 1.2;
+		let mu = 0;
+
+		let iteration = 0;
+		let min = 1e15;
+		let min_axis = 1e15;
+		while( zx*zx + zy*zy < escape_value && iteration < max_iteration) {
+			zy = zy + (epsilon * zy) + (kappa * zx) * (zx - 1) + ( mu * zx * zy );
+			zx = zx + zy
+
+			iteration++;
+			if(calc_fancy_render)
+				min = Math.min(min, Math.sqrt( Math.pow(ox - zx, 2) + Math.pow(oy - zy, 2) ) );
+				min_axis = Math.min(min_axis, Math.min( Math.abs(zx + ox), Math.abs(zy + oy)  )); // Implementation of pickover stalk
+		}
+		return [iteration, min, min_axis]
 	}
 }
 
@@ -162,7 +200,20 @@ let offsets = { // Offsets are in grid units, not pixels
 	"Chirikov Map": { x: -7.125, y: -3.75, s: 5 },
 	"Henon": { x: 0, y: 0, s: 1.5 },
 	"Tricorn": { x: 0, y: 0, s: 1.2 },
-	"Mandelbox": { x: -6.6, y: -3.3, s: 5 }
+	"Mandelbox": { x: -6.6, y: -3.3, s: 5 },
+	"Bogdanov Map": { x: 0, y: 0, s: 1 }
+}
+
+let parameters = {
+	"Mandelbrot Set": {
+		"d": 2
+	},
+	"Chirikov Map": {
+		"K": 1
+	},
+	"Mandelbox": {
+		"K": 2.5
+	}
 }
 
 const canvas = document.querySelector('#main')
@@ -213,6 +264,13 @@ let __interval__;
 let cached_result;
 let last_render = new Image();
 let hue_shift = 0;
+let render_mode = 0;
+
+// TODO: Remove
+let ox = 0;
+let oy = 0;
+
+let active_parameters = [];
 
 // Fractal selector
 let cur_fractal = "";
@@ -239,14 +297,38 @@ dropdown.addEventListener("change", function() {
 	pan_x = 0;
 	pan_y = 0;
 	scale = offsets[cur_fractal].s;
+
+	// Setup parameter UI
+	var el = document.getElementById("parameters");
+	el.innerHTML = "";
+
+	if(!parameters[cur_fractal]) return;
+
+	for( var parameter in parameters[cur_fractal] ) {
+		var l = document.createElement("label")
+		var i = document.createElement("input")
+		l.innerText = parameter + ": ";
+		l.htmlFor = parameter;
+		i.type = "number";
+		i.name = parameter;
+		i.value = parameters[cur_fractal][parameter];
+
+		active_parameters.push(i);
+
+		el.appendChild(l);
+		el.appendChild(i);
+	}
+	el.innerHTML += "<div class=\"divider\"></div>"
 })
 
 function DoRender(tx, ty, z) {
 
-	calc_orbits = document.getElementById("orbit").checked;
-
 	hue_shift = document.getElementById("hue").value * 1;
 	max_iteration = document.getElementById("itr2").value * 1;
+	render_mode = document.getElementById("render-mode").value * 1;
+
+	ox = document.getElementById("ox").value * 1;
+	oy = document.getElementById("oy").value * 1;
 
 	initial_rendering_time = new Date();
 
@@ -282,25 +364,40 @@ function DoRender(tx, ty, z) {
 			var sx = (x * scale_factor_x * z) + translate_factor_x + tx + offsets[cur_fractal].x;
 			var sy = (y * scale_factor_y * z) + translate_factor_y + ty + offsets[cur_fractal].y;
 
-			var results = fractals[cur_fractal](sx, sy );
+			let arg = {};
+			active_parameters.forEach( para => {
+				arg[para.name] = parseFloat(para.value);
+			})
+
+			var results = fractals[cur_fractal](sx, sy, ox, oy, arg );
 			let iteration = results[0];
 			let min_distance = results[1];
+			let min_axis = results[2]
 
 			ctx.beginPath()
-			if( calc_orbits ) {
-				if( iteration < max_iteration ) { // Outside the set
-					ctx.fillStyle = hslToHex( 0, 0, 20 + (iteration / max_iteration) * 80);
-				}else if( min_distance >= max_iteration ) {
-					ctx.fillStyle = "#000"
-				}else {
-					ctx.fillStyle = hslToHex(((min_distance * 2) * 360) + hue_shift , 85, 60)
-				}
-			}else {
-				if(iteration >= max_iteration) { // Belongs to the set
-					ctx.fillStyle = "#000"
-				}else {
-					ctx.fillStyle = hslToHex(((iteration / max_iteration) * 360) + hue_shift , 85, 60)
-				}
+			switch( render_mode ) {
+				case 1: // Orbit Render, point
+					if( iteration < max_iteration ) { // Outside the set
+						ctx.fillStyle = hslToHex( 0, 0, 20 + (iteration / max_iteration) * 80);
+					}else if( min_distance >= max_iteration ) {
+						ctx.fillStyle = "#000"
+					}else {
+						ctx.fillStyle = hslToHex(((min_distance * 2) * 360) + hue_shift , 85, 60)
+					}
+					break;
+				case 2: // Orbit Render, Axis
+					if(iteration < max_iteration) {
+						ctx.fillStyle = hslToHex( hue_shift + 180, 90, (min_axis) * 100 )
+					}else {
+						ctx.fillStyle = hslToHex( hue_shift, 90, (min_axis) * 100 )
+					}
+					break;
+				default:
+					if(iteration >= max_iteration) { // Belongs to the set
+						ctx.fillStyle = "#000"
+					}else {
+						ctx.fillStyle = hslToHex(((iteration / max_iteration) * 360) + hue_shift , 85, 60)
+					}
 			}
 			ctx.rect(x, y, 1, 1);
 			ctx.fill();

@@ -26,9 +26,21 @@
 		<label for="fractals">Fractal</label>
 		<select name="fractals" id="fractals"></select>
 
-		<div>
-			<input type="checkbox" name="orbit" id="orbit">
-			<label for="orbit" title="Renders the minimum distance a point approaches the origin at">Orbit Trap</label>
+		<label for="render-mode" title="Sets the render mode">Render Mode</label>
+		<select name="render-mode" id="render-mode">
+			<option value="0" selected>Iterative</option>
+			<option value="1">Orbit Trap (Point)</option>
+			<option value="2">Orbit Trap (Axis)</option>
+		</select>
+
+		<label title="X offset for orbit rendering" for="ox">X Pos (Orbit Render)</label>
+		<input type="number" id="ox" name="ox" min="-5" max="5" value="0">
+		<label title="Y offset for orbit rendering" for="oy">Y Pos</label>
+		<input type="number" id="oy" name="oy" min="-5" max="5" value="0">
+
+		<div class="divider"></div>
+
+		<div id="parameters">
 		</div>
 
 		<button id="rerender">Render</button>

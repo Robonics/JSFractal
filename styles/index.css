@@ -86,3 +86,9 @@ select {
 	background-color: rgb(20, 20, 20);
 	color: white;
 }
+
+.divider {
+	border-bottom: 1px solid white;
+	margin: 5px auto;
+	width: 100%;
+}
