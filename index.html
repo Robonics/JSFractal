@@ -9,7 +9,7 @@
 	<script src="scripts/index_async.js" defer></script>
 </head>
 <body>
-	<canvas id="main" style="width: 900px;"></canvas>
+	<canvas id="main" style="width: 80%;"></canvas>
 	<div class="control-box">
 		<label title="The resolution of the render" for="resolution">Resolution (<span id="resx"></span>, <span id="resy"></span>)</label>
 		<input type="range" id="resolution" name="resolution" min="100" max="1080">
@@ -31,6 +31,7 @@
 			<option value="0" selected>Iterative</option>
 			<option value="1">Orbit Trap (Point)</option>
 			<option value="2">Orbit Trap (Axis)</option>
+			<option value="3">Orbit Trap (All Points)</option>
 		</select>
 
 		<label title="X offset for orbit rendering" for="ox">X Pos (Orbit Render)</label>
@@ -44,13 +45,8 @@
 		</div>
 
 		<button id="rerender">Render</button>
+
+		<span id="timer"></span>
 	</div>
-	<div class="zoom-box">
-		<div>x: <input type="number" id="x-coord" value="0"></div>
-		<div>y: <input type="number" id="y-coord" value="0"></div>
-		<div>zoom: <span id="zoom">1</span></div>
-		<button id="reset">Reset</button>
-	</div>
-	<canvas id="nav" width="150px" height="150px"></canvas>
 </body>
 </html>

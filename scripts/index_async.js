@@ -7,190 +7,169 @@ const calc_fancy_render = true;
 const escape_value = 1000; // The value at which point we give up on the render // TODO: Add as a render setting
 // TODO: Organize Globals
 
-let fractals = {
-	"Burning Ship": function(sx, sy, ox, oy, para ) { // FIXME: Optimize orbit calculation by not calculating it for points outside the set, as they will always go to infinity
-		let zx = sx;
-		let zy = sy;
-
-		let iteration = 0;
-		let min = 1e15;
-		let min_axis = 1e15;
-		while (zx*zx + zy*zy < escape_value && iteration < max_iteration) {
-			var _x = zx*zx - zy*zy + sx 
-			zy = Math.abs(2*zx*zy) + sy // abs returns the absolute value
-			zx = _x
-			iteration++
-			if(calc_fancy_render)
-				min = Math.min(min, Math.sqrt( Math.pow(ox - zx, 2) + Math.pow(oy - zy, 2) ) );
-				min_axis = Math.min(min_axis, Math.min( Math.abs(zx + ox), Math.abs(zy + oy)  )); // Implementation of pickover stalk
+class ComplexNumber {
+	a;
+	b;
+	constructor(a, b) {
+		if(typeof a != 'number' || typeof b != "number") {
+			throw new TypeError("Parameters must be a number")
 		}
-		return [iteration, min, min_axis];
-	},
-	"Broken Burning Ship": function(sx, sy, ox, oy, para ) { // FIXME: Optimize orbit calculation by not calculating it for points outside the set, as they will always go to infinity
-		let zx = sy;
-		let zy = sx;
-
-		let iteration = 0;
-		let min = 1e15;
-		let min_axis = 1e15;
-		while (zx*zx + zy*zy < escape_value && iteration < max_iteration) {
-			var _x = zx*zx - zy*zy + sx 
-			zy = Math.abs(2*zx*zy) + sy // abs returns the absolute value
-			zx = _x
-			iteration++
-			if(calc_fancy_render)
-				min = Math.min(min, Math.sqrt( Math.pow(ox - zx, 2) + Math.pow(oy - zy, 2) ) );
-				min_axis = Math.min(min_axis, Math.min( Math.abs(zx + ox), Math.abs(zy + oy)  )); // Implementation of pickover stalk
-		}
-		return [iteration, min, min_axis];
-	},
-	"Mandelbrot Set": function( sx, sy, ox, oy, para ) { // TODO: Implement user controlled variables K
-		let zx = 0;
-		let zy = 0;
-
-		let d = para["d"]
-
-		let iteration = 0;
-		let min = 1e15;
-		let min_axis = 1e15;
-		while (zx*zx + zy*zy <= escape_value && iteration < max_iteration) {
-			var _x = Math.pow(zx*zx+zy*zy, d/2) * Math.cos(d * Math.atan2(zy, zx)) + sx
-			zy = Math.pow(zx*zx+zy*zy, d/2) * Math.sin(d * Math.atan2(zy, zx)) + sy
-			zx = _x 
- 
-			iteration++;
-			if(calc_fancy_render)
-				min = Math.min(min, Math.sqrt( Math.pow(ox - zx, 2) + Math.pow(oy - zy, 2) ) );
-				min_axis = Math.min(min_axis, Math.min( Math.abs(zx + ox), Math.abs(zy + oy)  )); // Implementation of pickover stalk
-		}
-
-		return [iteration, min, min_axis];
+		this.a = a;
+		this.b = b;
 	}
-	,
-	"Chirikov Map": function( sx, sy, ox, oy, arg ) {
-		let zx = sx;
-		let zy = sy;
-
-		let iteration = 0;
-		let min = 1e15;
-		let min_axis = 1e15;
-		while (zx*zx + zy*zy <= escape_value && iteration < max_iteration) {
-			zy += sy * Math.sin( zx ) * arg["K"];
-			zx += sx * zy;
-			iteration++;
-			if(calc_fancy_render)
-				min = Math.min(min, Math.sqrt( Math.pow(ox - zx, 2) + Math.pow(oy - zy, 2) ) );
-				min_axis = Math.min(min_axis, Math.min( Math.abs(zx + ox), Math.abs(zy + oy)  )); // Implementation of pickover stalk
+	add(  ) { // a + bi + c + di = a + c + bi + di
+		let z = new ComplexNumber(this.a, this.b);
+		for( var i = 0; i < arguments.length; i++ ) {
+			if(arguments[i] instanceof ComplexNumber) {
+				z.a += arguments[i].a;
+				z.b += arguments[i].b;
+			}else if( typeof arguments[i] == "number" ) {
+				z.a += arguments[i]
+			}else throw new TypeError("Type of argument " + i + " must either be a real or complex number")
 		}
-
-		return [iteration, min, min_axis];
-	},
-	"Henon": function( sx, sy, ox, oy, para ) {
-		let zx = sx;
-		let zy = sy;
-
-		let iteration = 0;
-		let min = 1e15;
-		let min_axis = 1e15;
-		while( zx*zx + zy*zy <= escape_value && iteration < max_iteration ) {
-			var _x = 1 - sx*zx*zx + zy;
-			zy = sy * zx;
-			zx = _x;
-
-			iteration++;
-			if(calc_fancy_render)
-				min = Math.min(min, Math.sqrt( Math.pow(ox - zx, 2) + Math.pow(oy - zy, 2) ) );
-				min_axis = Math.min(min_axis, Math.min( Math.abs(zx + ox), Math.abs(zy + oy)  )); // Implementation of pickover stalk
+		return z;
+	}
+	multiply(  ) {
+		let z = new ComplexNumber( this.a, this.b );
+		for( var i = 0; i < arguments.length; i++ ) {
+			if( arguments[i] instanceof ComplexNumber ) {
+				var _a = z.a * arguments[i].a - z.b * arguments[i].b;
+				z.b = (z.a * arguments[i].b + z.b * arguments[i].a)
+				z.a = _a;
+			}else if( typeof arguments[i] == "number" ) {
+				z.a *= arguments[i];
+				z.b *= arguments[i];
+			}else throw new TypeError("Type of argument " + i + " must be a real or complex number")
 		}
+		return z;
+	}
+	divide( c ) {
+		let z = new ComplexNumber(this.a, this.b);
+		if( !(c instanceof ComplexNumber)) { throw new TypeError("Argument must be complex number") }
 
-		return [iteration, min, min_axis]
-	},
-	"Tricorn": function( sx, sy, ox, oy, para ) {
-		let zx = sx;
-		let zy = sy;
+		z.a = ( this.a * c.a + this.b * c.b ) / ( c.a*c.a + c.b*c.b )
+		z.b = ( this.b*c.a - this.a*c.b ) / ( c.a*c.a + c.b*c.b )
 
-		let iteration = 0;
-		let min = 1e15;
-		let min_axis = 1e15;
-		while( zx*zx + zy*zy <= escape_value && iteration < max_iteration ) {
-			var _x = zx*zx - zy*zy + sx
-			zy = -2*zx*zy + sy
+		return z;
+	}
+	pow( n ) {
+		let z = new ComplexNumber( this.a, this.b )
+		if( typeof n == "number" ) {
+			// Complex number to power of real number
+			if(n == 0) return new ComplexNumber(1, 0)
+			let _z = [];
+			for( var i = 0; i < n-1; i++ ) {
+				_z.push( z );
+			}
+			z = z.multiply( ..._z )
+		}else throw new TypeError( "Argument must be of type Number" );
+		return z;
+	}
+	sin() {
+		let z = new ComplexNumber( 0, 0 );
+		z.a = Math.sin( this.a ) * Math.cosh( this.b )
+		z.b = Math.cos( this.a ) * Math.sinh( this.b )
+		return z
+	}
+	m() { return this.multiply(-1) } // Negative
+}
+
+let inits = {
+	"Burning Ship": function( sx, sy ) { return [ sx, sy ];},
+	"Broken Burning Ship": function( sx, sy ) { return [ sy, sx ];},
+	"Mandelbrot Set": function( sx, sy ) { return [ 0, 0 ];},
+	"Chirikov Map": function( sx, sy ) { return [ sx, sy ];},
+	"Henon": function( sx, sy ) { return [ sx, sy ];},
+	"Tricorn": function( sx, sy ) { return [ sx, sy ];},
+	"Mandelbox": function( sx, sy ) { return [ sx, sy ];},
+	"Bogdanov Map": function( sx, sy ) { return [ sx, sy ];}
+}
+let fractals = {
+	"Burning Ship": function(sx, sy, zx, zy, para ) {
+			var _x = zx*zx - zy*zy + sx 
+			zy = Math.abs(2*zx*zy) + sy
 			zx = _x
-
-			iteration++;
-			if(calc_fancy_render)
-				min = Math.min(min, Math.sqrt( Math.pow(ox - zx, 2) + Math.pow(oy - zy, 2) ) );
-				min_axis = Math.min(min_axis, Math.min( Math.abs(zx + ox), Math.abs(zy + oy)  )); // Implementation of pickover stalk
-		}
-
-		return [iteration, min, min_axis]
+			return [zx, zy];
 	},
-	"Mandelbox": function( sx, sy, ox, oy, para ) {
+	"Broken Burning Ship": function(sx, sy, zx, zy, para ) {
+		var _x = zx*zx - zy*zy + sx 
+		zy = Math.abs(2*zx*zy) + sy
+		zx = _x
+		return [zx, zy];
+	},
+	"Mandelbrot Set": function( sx, sy, zx, zy, para ) {
+		let d = para["d"]
+		var _x = Math.pow(zx*zx+zy*zy, d/2) * Math.cos(d * Math.atan2(zy, zx)) + sx
+		zy = Math.pow(zx*zx+zy*zy, d/2) * Math.sin(d * Math.atan2(zy, zx)) + sy
+		zx = _x 
+		return [zx, zy];
+
+		// While this is simpler to understand, it is less efficient
+		// let z = new ComplexNumber( zx, zy );
+		// let c = new ComplexNumber( sx, sy );
+
+		// z = z.pow(d).add(c)
+
+		// return [zx, zy];
+	},
+	"Chirikov Map": function( sx, sy, zx, zy, arg ) {
+		zy += sy * Math.sin( zx ) * arg["K"];
+		zx += sx * zy;
+		return [zx,zy]
+	},
+	"Henon": function( sx, sy, zx, zy, para ) {
+		var _x = 1 - sx*zx*zx + zy;
+		zy = sy * zx;
+		zx = _x;
+		return [zx, zy]
+	},
+	"Tricorn": function( sx, sy, zx, zy, para ) {
+		var _x = zx*zx - zy*zy + sx
+		zy = -2*zx*zy + sy
+		zx = _x
+		return [zx, zy]
+	},
+	"Mandelbox": function( sx, sy, zx, zy, para ) {
 
 		const K = para["K"];
-
-		let zx = sx;
-		let zy = sy;
-
-		let iteration = 0;
-		let min = 1e15;
-		let min_axis = 1e15;
-		while( zx*zx + zy*zy <= escape_value && iteration < max_iteration ) {
-			// X
-			if(zx > 1) {
-				zx = 2 - zx
-			}else if(zx < -1) {
-				zx = -2 - zx
-			}
-			// Y
-			if(zy > 1) {
-				zy = 2 - zy
-			}else if(zy < -1) {
-				zy = -2 - zy
-			}
-
-			// Calculate Magnitude
-			var mag = Math.sqrt( zx*zx + zy*zy )
-			if( mag < 0.5 ) {
-				zx *= 4;
-				zy *= 4;
-			}else if(mag < 1) {
-				zx /= mag * mag;
-				zy /= mag * mag;
-			}
-
-			zx = K * zx + sx;
-			zy = K * zy + sy;
-
-			iteration++;
-			if(calc_fancy_render)
-				min = Math.min(min, Math.sqrt( Math.pow(ox - zx, 2) + Math.pow(oy - zy, 2) ) );
-				min_axis = Math.min(min_axis, Math.min( Math.abs(zx + ox), Math.abs(zy + oy)  )); // Implementation of pickover stalk
+		// X
+		if(zx > 1) {
+			zx = 2 - zx
+		}else if(zx < -1) {
+			zx = -2 - zx
+		}
+		// Y
+		if(zy > 1) {
+			zy = 2 - zy
+		}else if(zy < -1) {
+			zy = -2 - zy
 		}
 
-		return [iteration, min, min_axis]
+		// Calculate Magnitude
+		var mag = Math.sqrt( zx*zx + zy*zy )
+		if( mag < 0.5 ) {
+			zx *= 4;
+			zy *= 4;
+		}else if(mag < 1) {
+			zx /= mag * mag;
+			zy /= mag * mag;
+		}
+
+		zx = K * zx + sx;
+		zy = K * zy + sy;
+
+		return [ zx, zy ]
 	},
-	"Bogdanov Map": function( sx, sy, ox, oy, para ) {
-		let zx = sx;
-		let zy = sy;
+	"Bogdanov Map": function( sx, sy, zx, zy, para ) {
 
-		let epsilon = 0;
-		let kappa = 1.2;
-		let mu = 0;
+		let epsilon = para["ε"];
+		let kappa = para["k"];
+		let mu = para["μ"];
 
-		let iteration = 0;
-		let min = 1e15;
-		let min_axis = 1e15;
-		while( zx*zx + zy*zy < escape_value && iteration < max_iteration) {
-			zy = zy + (epsilon * zy) + (kappa * zx) * (zx - 1) + ( mu * zx * zy );
-			zx = zx + zy
+		zy = zy + (epsilon * zy) + (kappa * zx) * (zx - 1) + ( mu * zx * zy );
+		zx = zx + zy
 
-			iteration++;
-			if(calc_fancy_render)
-				min = Math.min(min, Math.sqrt( Math.pow(ox - zx, 2) + Math.pow(oy - zy, 2) ) );
-				min_axis = Math.min(min_axis, Math.min( Math.abs(zx + ox), Math.abs(zy + oy)  )); // Implementation of pickover stalk
-		}
-		return [iteration, min, min_axis]
+		return [zx, zy]
 	}
 }
 
@@ -202,7 +181,7 @@ let offsets = { // Offsets are in grid units, not pixels
 	"Henon": { x: 0, y: 0, s: 1.5 },
 	"Tricorn": { x: 0, y: 0, s: 1.2 },
 	"Mandelbox": { x: -6.6, y: -3.3, s: 5 },
-	"Bogdanov Map": { x: 0, y: 0, s: 1 }
+	"Bogdanov Map": { x: 1, y: 0.5, s: 1 }
 }
 
 let parameters = {
@@ -214,21 +193,20 @@ let parameters = {
 	},
 	"Mandelbox": {
 		"K": 2.5
+	},
+	"Bogdanov Map": {
+		ε: 0,
+		k: 1.2,
+		μ: 0
 	}
 }
 
 const canvas = document.querySelector('#main')
 var ctx = canvas.getContext('2d')
 
-const navcanv = document.querySelector("#nav")
-var navctx = navcanv.getContext('2d')
-const infinity_threshold = MAGIC_Y;
-
 let resolution = 800;
 let iteration_count = 800; // The number of points to render per frame
 let aspect_ratio = MAGIC_X / MAGIC_Y; // X / Y for the Burning Ship fractal
-
-navcanv.width *= aspect_ratio;
 
 let resolution_x = resolution * aspect_ratio;
 let resolution_y = resolution;
@@ -298,6 +276,7 @@ dropdown.addEventListener("change", function() {
 	pan_x = 0;
 	pan_y = 0;
 	scale = offsets[cur_fractal].s;
+	julia_render = false;
 
 	// Setup parameter UI
 	var el = document.getElementById("parameters");
@@ -321,14 +300,35 @@ dropdown.addEventListener("change", function() {
 	}
 })
 
+// Julia render variables
+/**
+ * Should we render a julia set
+ * @global
+*/
+let julia_render = false;
+/**
+ * The real part of the constant C
+ * @global
+*/ 
+let Cx = 0;
+/**
+ * The imaginary part of the constant C
+ * @global
+*/
+let Cy = 0;
+
+let time_span = document.getElementById("timer")
+
 function DoRender(tx, ty, z) {
+
+	render_button.style.removeProperty("--sub-color");
 
 	hue_shift = document.getElementById("hue").value * 1;
 	max_iteration = document.getElementById("itr2").value * 1;
 	render_mode = document.getElementById("render-mode").value * 1;
 
 	ox = document.getElementById("ox").value * 1;
-	oy = document.getElementById("oy").value * 1;
+	oy = document.getElementById("oy").value * -1;
 
 	initial_rendering_time = new Date();
 
@@ -342,24 +342,12 @@ function DoRender(tx, ty, z) {
 	scale_factor_y = (2 / resolution_y)
 	translate_factor_y = -1.5;
 
-	navctx.beginPath()
-	navctx.fillStyle = "#000"
-	navctx.fillRect(0, 0, navcanv.width, navcanv.height);
-	if(cached_result) {
-		if(cached_result.complete) {
-			navctx.drawImage(cached_result, 0, 0, navcanv.width, navcanv.height);
-		}
-	}
-	ctx.beginPath();
-	navctx.strokeStyle = "#ffffff"
-	navctx.lineWidth = 2
-	navctx.rect((tx / MAGIC_X) * navcanv.width, (ty / MAGIC_Y) * navcanv.height, navcanv.width * z, navcanv.height * z)
-	navctx.stroke();
-
 	ctx.setTransform(1, 0, 0, 1, 0, 0);
 
 	__interval__ = setInterval(function() {
-
+		var time = Date.now() - initial_rendering_time;
+		render_button.style.setProperty("--sub-width", `${(x / resolution_x) * 100}%`)
+		time_span.innerText = `${(time / 1000).toFixed(2)}s elapsed`
 		for(var i = 0; i < iteration_count; i++) {
 			var sx = (x * scale_factor_x * z) + translate_factor_x + tx + offsets[cur_fractal].x;
 			var sy = (y * scale_factor_y * z) + translate_factor_y + ty + offsets[cur_fractal].y;
@@ -369,10 +357,36 @@ function DoRender(tx, ty, z) {
 				arg[para.name] = parseFloat(para.value);
 			})
 
-			var results = fractals[cur_fractal](sx, sy, ox, oy, arg );
-			let iteration = results[0];
-			let min_distance = results[1];
-			let min_axis = results[2]
+			let init = inits[cur_fractal](sx, sy);
+			let zx;
+			let zy;
+			if( julia_render ) {
+				zx = sx;
+				zy = sy;
+			}else {
+				zx = init[0];
+				zy = init[1];
+			}
+
+			let iteration = 0;
+			let min_distance = 1e15;
+			let min_axis = 1e15;
+
+			while (zx*zx + zy*zy < escape_value && iteration < max_iteration) {
+				let results;
+				if( julia_render ) {
+					results = fractals[cur_fractal]( Cx, Cy, zx, zy, arg );
+				}else {
+					results = fractals[cur_fractal]( sx, sy, zx, zy, arg );
+				}
+				zx = results[0];
+				zy = results[1];
+
+				iteration++
+				if(calc_fancy_render)
+					min_distance = Math.min(min_distance, Math.sqrt( Math.pow(ox - zx, 2) + Math.pow(oy - zy, 2) ) );
+					min_axis = Math.min(min_axis, Math.min( Math.abs(zx + ox), Math.abs(zy + oy)  )); // Implementation of pickover stalk
+			}
 
 			ctx.beginPath()
 			switch( render_mode ) {
@@ -392,6 +406,13 @@ function DoRender(tx, ty, z) {
 						ctx.fillStyle = hslToHex( hue_shift, 90, (min_axis) * 100 )
 					}
 					break;
+				case 3: // Orbit Render, all points
+					if( iteration < max_iteration ) {
+						ctx.fillStyle = hslToHex(((min_distance * 2) * 360) + hue_shift , 75, 70)
+					}else {
+						ctx.fillStyle = hslToHex(((min_distance * 2) * 360) + hue_shift , 85, 60)
+					}
+					break;
 				default:
 					if(iteration >= max_iteration) { // Belongs to the set
 						ctx.fillStyle = "#000"
@@ -403,6 +424,7 @@ function DoRender(tx, ty, z) {
 			ctx.fill();
 
 			rendered++
+
 			y++;
 			if( y > resolution_y ) {
 				y = 0;
@@ -413,6 +435,8 @@ function DoRender(tx, ty, z) {
 				rendering = false;
 				var time = Date.now() - initial_rendering_time;
 				console.log(`Rendered ${rendered} points in ${time / 1000} seconds`)
+				time_span.innerText = `Done in ${(time / 1000).toFixed(2)}s`
+				render_button.style.setProperty("--sub-color", "rgb(78, 225, 149)");
 
 				if(!cached_result) {
 					cached_result = new Image();
@@ -443,10 +467,6 @@ res_label_y.innerHTML = resolution_y;
 let itr_label = document.getElementById("iter")
 itr_label.innerHTML = iteration_count;
 
-let xcoord = document.getElementById("x-coord")
-let ycoord = document.getElementById("y-coord")
-let zoom = document.getElementById("zoom")
-
 res_slider.addEventListener("change", function() {
 	if(rendering) {
 		this.value = resolution;
@@ -471,72 +491,7 @@ let pan_x = 0;
 let pan_y = 0;
 let scale = 1;
 
-render_button.addEventListener("click", function() {
-	if(rendering) { return; }
-	DoRender(pan_x, pan_y, scale)
-})
-navcanv.addEventListener("mousedown", function() {this.mouse = true})
-canvas.addEventListener("mousedown", function() { this.mouse = true})
-window.addEventListener("mouseup", function() {navcanv.mouse = false; canvas.mouse = false;})
-navcanv.addEventListener("mousemove", function(e) {
-	if(this.mouse) {
-		if(rendering) { return; }
-		if(this.last_drag) {
-			var dx = e.screenX - this.last_drag.screenX
-			var dy = e.screenY - this.last_drag.screenY
-			
-			pan_x += dx * (MAGIC_X / navcanv.width)
-			pan_y += dy * (MAGIC_Y / navcanv.height)
-
-			if(last_render.complete) {
-
-				var lx = last_render.lx * ( canvas.width / scale / MAGIC_X ); // The x offset of the last render we did, in pixels
-				var ly = last_render.ly * ( canvas.height / scale / MAGIC_Y ); // The y offset of the last render, in pixels
-
-				var tx = pan_x * ( canvas.width / scale / MAGIC_X ); // The current preview offset, in pixels
-				var ty = pan_y * ( canvas.height / scale / MAGIC_Y );
-
-				var ndx = lx - tx; // The offset of the preview image
-				var ndy = ly - ty;
-
-				ctx.fillStyle = "#000"
-				ctx.fillRect(0,0,canvas.width,canvas.height);
-				ctx.drawImage( last_render, ndx, ndy, canvas.width * (last_render.scale / scale), canvas.height * (last_render.scale / scale) )
-			}
-
-			navctx.beginPath()
-			navctx.fillStyle = "#000"
-			navctx.fillRect(0, 0, navcanv.width, navcanv.height);
-			if(cached_result) {
-				if(cached_result.complete) {
-					navctx.drawImage(cached_result, 0, 0, navcanv.width, navcanv.height);
-				}
-			}
-			ctx.beginPath();
-			navctx.strokeStyle = "#ffffff"
-			navctx.lineWidth = 2
-			navctx.rect((pan_x / MAGIC_X) * navcanv.width, (pan_y / MAGIC_Y) * navcanv.height, navcanv.width * scale, navcanv.height * scale)
-			navctx.stroke();
-
-			xcoord.value = pan_x;
-			ycoord.value = pan_y;
-			zoom.innerText = scale;
-		}
-
-		this.last_drag = e;
-	}else {
-		this.last_drag = null;
-	}
-});
-navcanv.addEventListener("wheel", function(e) {
-	if(rendering) { return; }
-	let _scale = scale; // old scale for calculations
-	scale += ( ( e.deltaY * scale ) / 250 ) // The zoom rate gets slower as scale gets smaller
-	scale = Math.max(0, Math.min(5, scale)); // Clamp range to 0-5
-
-	pan_x += (((navcanv.width * _scale) - (navcanv.width * scale)) / 2) * (MAGIC_X / navcanv.width);
-	pan_y += (((navcanv.height * _scale) - (navcanv.height * scale)) / 2) * (MAGIC_Y / navcanv.height);
-
+function rerenderCanvas() {
 	if(last_render.complete) {
 
 		var lx = last_render.lx * ( canvas.width / scale / MAGIC_X ); // The x offset of the last render we did, in pixels
@@ -545,31 +500,211 @@ navcanv.addEventListener("wheel", function(e) {
 		var tx = pan_x * ( canvas.width / scale / MAGIC_X ); // The current preview offset, in pixels
 		var ty = pan_y * ( canvas.height / scale / MAGIC_Y );
 
-		var dx = lx - tx; // The offset of the preview image
-		var dy = ly - ty;
+		var ndx = lx - tx; // The offset of the preview image
+		var ndy = ly - ty;
 
 		ctx.fillStyle = "#000"
 		ctx.fillRect(0,0,canvas.width,canvas.height);
-		ctx.drawImage( last_render, dx, dy, canvas.width * (last_render.scale / scale), canvas.height * (last_render.scale / scale) ) // TODO: Fix zoom
+		ctx.drawImage( last_render, ndx, ndy, canvas.width * (last_render.scale / scale), canvas.height * (last_render.scale / scale) )
+	}
+}
+
+function drawOrbitPath(e) {
+	if(rendering) return;
+	rerenderCanvas();
+	// Computer cx, cy, which are pixel coordinates on the canvas rendering space
+	var rect = e.target.getBoundingClientRect();
+	var style = canvas.currentStyle || window.getComputedStyle(canvas)
+	var cx = e.clientX - rect.left - parseFloat(style.borderLeftWidth) - parseFloat(style.paddingLeft); //x position within the element.
+	var cy = e.clientY - rect.top - parseFloat(style.borderTopWidth) - parseFloat(style.paddingTop);  //y position within the element.
+
+	var true_width = rect.right - rect.left - parseFloat(style.borderLeftWidth) - parseFloat(style.borderRightWidth) - parseFloat(style.paddingLeft) - parseFloat(style.paddingRight)
+	var true_height = rect.bottom - rect.top - parseFloat(style.borderTopWidth) - parseFloat(style.borderBottomWidth) - parseFloat(style.paddingTop) - parseFloat(style.paddingBottom)
+
+	// Convert cx, cy to gx, gy which are grid points in the complex plane
+	let scfx = (MAGIC_X / true_width);
+	let scfy = (MAGIC_Y / true_height) ;
+	var gx = (cx * scfx * scale) + translate_factor_x + pan_x + offsets[cur_fractal].x;
+	var gy = (cy * scfy * scale) + translate_factor_y + pan_y + offsets[cur_fractal].y;
+
+	let init = inits[cur_fractal]( gx, gy );
+	let zx;
+	let zy;
+	if(julia_render) {
+		zx = gx;
+		zy = gy;
+	}else {
+		zx = init[0];
+		zy = init[1];
 	}
 
-	navctx.beginPath()
-	navctx.fillStyle = "#000"
-	navctx.fillRect(0, 0, navcanv.width, navcanv.height);
-	if(cached_result) {
-		if(cached_result.complete) {
-			navctx.drawImage(cached_result, 0, 0, navcanv.width, navcanv.height);
+	let arg = {};
+	active_parameters.forEach( para => {
+		arg[para.name] = parseFloat(para.value);
+	})
+
+	if( ox != 0 || oy != 0 ) {
+		ctx.beginPath();
+		ctx.fillStyle = "#ffffff"
+		var x0 = ( ox - translate_factor_x - pan_x - offsets[cur_fractal].x ) / ( (MAGIC_X / canvas.width) * scale )
+		var y0 = ( oy - translate_factor_y - pan_y - offsets[cur_fractal].y) / ( (MAGIC_Y / canvas.height) * scale )
+		ctx.arc(x0, y0, 3, 0, 2 * Math.PI); 
+		ctx.fill();
+		ctx.strokeStyle = "#ffffff"
+		ctx.moveTo( x0 - 500, y0 );
+		ctx.lineTo( x0 + 500, y0 );
+		ctx.moveTo( x0, y0 - 500 );
+		ctx.lineTo( x0, y0 + 500 );
+		ctx.stroke()
+		ctx.font = "italic 30px serif"
+		if(oy != 0) ctx.fillText( "y = " + oy.toFixed(3), Math.max(x0 - 500, 0), y0 - 2 )
+		if(ox != 0) ctx.fillText( "x = " + ox.toFixed(3), x0 + 2, Math.max(y0 - 485, 15) )
+	}
+
+	ctx.beginPath();
+	ctx.fillStyle = "#ffffff"
+	var x0 = ( -translate_factor_x - pan_x - offsets[cur_fractal].x ) / ( (MAGIC_X / canvas.width) * scale )
+	var y0 = (-translate_factor_y - pan_y - offsets[cur_fractal].y) / ( (MAGIC_Y / canvas.height) * scale )
+	ctx.arc(x0, y0, 3, 0, 2 * Math.PI); 
+	ctx.fill();
+	ctx.strokeStyle = "#ffffff"
+	ctx.moveTo( x0 - 500, y0 );
+	ctx.lineTo( x0 + 500, y0 );
+	ctx.moveTo( x0, y0 - 500 );
+	ctx.lineTo( x0, y0 + 500 );
+	ctx.stroke()
+	ctx.font = "italic 30px serif"
+	ctx.fillText( 'x', Math.max(x0 - 500, 0), y0 - 2 )
+	ctx.fillText( 'y', x0 - 15, Math.max(y0 - 485, 15) )
+
+	ctx.beginPath();
+	ctx.strokeStyle = "#ffffff"
+	ctx.moveTo( (gx - translate_factor_x - pan_x - offsets[cur_fractal].x) / ( (MAGIC_X / canvas.width) * scale ) , (gy - translate_factor_y - pan_y - offsets[cur_fractal].y) / ( (MAGIC_Y / canvas.height) * scale ) )
+	let min_dist = 1e15;
+	let min_x = 1e15;
+	let min_y = 1e15;
+	for(var i = 0; i < max_iteration; i++) {
+		let result;
+		if( julia_render ) {
+			result = fractals[cur_fractal]( Cx, Cy, zx, zy, arg );
+		}else {
+			result = fractals[cur_fractal]( gx, gy, zx, zy, arg );
+		}
+		zx = result[0];
+		zy = result[1];
+		if( zx*zx + zy*zy >= escape_value ) break;
+		ctx.lineTo( (zx - translate_factor_x - pan_x - offsets[cur_fractal].x) / ( (MAGIC_X / canvas.width) * scale ) , (zy - translate_factor_y - pan_y - offsets[cur_fractal].y) / ( (MAGIC_Y / canvas.height) * scale ) )
+
+		let dist = Math.sqrt( Math.pow(ox - zx, 2) + Math.pow(oy - zy, 2) );
+		if( dist < min_dist ) {
+			min_dist = dist;
+			min_x = zx;
+			min_y = zy;
 		}
 	}
-	ctx.beginPath();
-	navctx.strokeStyle = "#ffffff"
-	navctx.lineWidth = 2
-	navctx.rect((pan_x / MAGIC_X) * navcanv.width, (pan_y / 2) * navcanv.height, navcanv.width * scale, navcanv.height * scale)
-	navctx.stroke();
+	ctx.stroke();
 
-	xcoord.value = pan_x;
-	ycoord.value = pan_y;
-	zoom.innerText = scale;
+	var px = ( min_x - translate_factor_x - pan_x - offsets[cur_fractal].x ) / ( (MAGIC_X / canvas.width) * scale )
+	var py = ( min_y - translate_factor_y - pan_y - offsets[cur_fractal].y) / ( (MAGIC_Y / canvas.height) * scale )
+
+	ctx.beginPath()
+	ctx.fillStyle = "#ff0000"
+	ctx.strokeStyle = "#ffffff"
+	ctx.arc( px, py, 3, 0, 2 * Math.PI );
+	ctx.fill()
+	ctx.stroke()
+	ctx.beginPath()
+	ctx.strokeStyle = "#ffffff"
+	ctx.moveTo( px, py );
+	ctx.lineTo( ( ox - translate_factor_x - pan_x - offsets[cur_fractal].x ) / ( (MAGIC_X / canvas.width) * scale ), ( oy - translate_factor_y - pan_y - offsets[cur_fractal].y) / ( (MAGIC_Y / canvas.height) * scale ) );
+	ctx.stroke();
+}
+function juliaHelpText(e) {
+	if(rendering) return;
+	rerenderCanvas();
+	// Computer cx, cy, which are pixel coordinates on the canvas rendering space
+	var rect = canvas.getBoundingClientRect();
+	var style = canvas.currentStyle || window.getComputedStyle(canvas)
+	var cx = e.clientX - rect.left - parseFloat(style.borderLeftWidth) - parseFloat(style.paddingLeft); //x position within the element.
+	var cy = e.clientY - rect.top - parseFloat(style.borderTopWidth) - parseFloat(style.paddingTop);  //y position within the element.
+
+	var true_width = rect.right - rect.left - parseFloat(style.borderLeftWidth) - parseFloat(style.borderRightWidth) - parseFloat(style.paddingLeft) - parseFloat(style.paddingRight)
+	var true_height = rect.bottom - rect.top - parseFloat(style.borderTopWidth) - parseFloat(style.borderBottomWidth) - parseFloat(style.paddingTop) - parseFloat(style.paddingBottom)
+
+	// Convert cx, cy to gx, gy which are grid points in the complex plane
+	let scfx = (MAGIC_X / true_width);
+	let scfy = (MAGIC_Y / true_height) ;
+	var gx = (cx * scfx * scale) + translate_factor_x + pan_x + offsets[cur_fractal].x;
+	var gy = -((cy * scfy * scale) + translate_factor_y + pan_y + offsets[cur_fractal].y);
+
+	let px = (gx - translate_factor_x - pan_x - offsets[cur_fractal].x) / ( (MAGIC_X / canvas.width) * scale );
+	let py = ((-gy - translate_factor_y - pan_y - offsets[cur_fractal].y) / ( (MAGIC_Y / canvas.height) * scale ));
+
+	ctx.beginPath()
+	ctx.fillStyle = "#ffffff"
+	ctx.font = "20px sans-serif"
+	ctx.fillText( `Release to Draw Julia For`, px, py - 20 )
+	ctx.fillText( `(${gx.toFixed(7)}, ${gy.toFixed(7)})`, px, py )
+
+	return { x: gx, y: -gy }
+}
+
+render_button.addEventListener("click", function() {
+	if(rendering) { return; }
+	DoRender(pan_x, pan_y, scale)
+})
+canvas.addEventListener("mousedown", function( e ) {
+	if(e.button == 0) { 
+		this.mouse = true;
+	}else if(e.button == 1) {
+		drawOrbitPath(e);
+		this.mouse_middle = true
+	}
+})
+window.addEventListener("mouseup", function( e ) {
+	if(e.button == 0) {
+		canvas.mouse = false;
+	}else if(e.button == 1) {
+		canvas.mouse_middle = false;
+	}
+})
+window.addEventListener("keydown", function(e) {
+	if(e.code == "KeyJ" && !canvas.keyj) {
+		canvas.keyj = true;
+		if(canvas.cx != undefined && canvas.cy != undefined && !rendering && !julia_render) {
+			e.clientX = canvas.cx;
+			e.clientY = canvas.cy;
+			rerenderCanvas();
+			this.proposed_julia = juliaHelpText(e)
+		}
+	}
+})
+window.addEventListener("keyup", function(e) {
+	if(e.code == "KeyJ") {
+		canvas.keyj = false;
+		if(!rendering)
+			if( !julia_render && this.proposed_julia != undefined ) {
+				julia_render = true;
+				Cx = this.proposed_julia.x
+				Cy = this.proposed_julia.y
+
+				pan_x = 0;
+				pan_y = 0;
+				scale = offsets[cur_fractal].s;
+
+				DoRender( pan_x, pan_y, scale );
+			}else if( julia_render ) {
+				julia_render = false;
+
+				pan_x = 0;
+				pan_y = 0;
+				scale = offsets[cur_fractal].s;
+
+				DoRender( pan_x, pan_y, scale );
+			}else {
+				rerenderCanvas();
+			}
+	}
 })
 
 canvas.addEventListener("mousemove", function(e) {
@@ -582,45 +717,20 @@ canvas.addEventListener("mousemove", function(e) {
 			pan_x -= dx * (MAGIC_X / canvas.width) * scale * 2
 			pan_y -= dy * (MAGIC_Y / canvas.height) * scale * 2
 
-			if(last_render.complete) {
-
-				var lx = last_render.lx * ( canvas.width / scale / MAGIC_X ); // The x offset of the last render we did, in pixels
-				var ly = last_render.ly * ( canvas.height / scale / MAGIC_Y ); // The y offset of the last render, in pixels
-
-				var tx = pan_x * ( canvas.width / scale / MAGIC_X ); // The current preview offset, in pixels
-				var ty = pan_y * ( canvas.height / scale / MAGIC_Y );
-
-				var ndx = lx - tx; // The offset of the preview image
-				var ndy = ly - ty;
-
-				ctx.fillStyle = "#000"
-				ctx.fillRect(0,0,canvas.width,canvas.height);
-				ctx.drawImage( last_render, ndx, ndy, canvas.width * (last_render.scale / scale), canvas.height * (last_render.scale / scale) )
-			}
-
-			navctx.beginPath()
-			navctx.fillStyle = "#000"
-			navctx.fillRect(0, 0, navcanv.width, navcanv.height);
-			if(cached_result) {
-				if(cached_result.complete) {
-					navctx.drawImage(cached_result, 0, 0, navcanv.width, navcanv.height);
-				}
-			}
-			ctx.beginPath();
-			navctx.strokeStyle = "#ffffff"
-			navctx.lineWidth = 2
-			navctx.rect((pan_x / MAGIC_X) * navcanv.width, (pan_y / MAGIC_Y) * navcanv.height, navcanv.width * scale, navcanv.height * scale)
-			navctx.stroke();
-
-			xcoord.value = pan_x;
-			ycoord.value = pan_y;
-			zoom.innerText = scale;
+			rerenderCanvas();
 		}
 
 		this.last_drag = e;
 	}else {
 		this.last_drag = null;
 	}
+	if( this.mouse_middle && !this.mouse ) {
+		drawOrbitPath( e );
+	}else if(this.keyj && !this.mouse && !julia_render) {
+		window.proposed_julia = juliaHelpText( e );
+	}
+	this.cx = e.clientX;
+	this.cy = e.clientY;
 });
 canvas.addEventListener("wheel", function(e) {
 	if(rendering) { return; }
@@ -631,149 +741,7 @@ canvas.addEventListener("wheel", function(e) {
 	pan_x += (((canvas.width * _scale) - (canvas.width * scale)) / 2) * (MAGIC_X / canvas.width);
 	pan_y += (((canvas.height * _scale) - (canvas.height * scale)) / 2) * (MAGIC_Y / canvas.height);
 
-	if(last_render.complete) {
-
-		var lx = last_render.lx * ( canvas.width / scale / MAGIC_X ); // The x offset of the last render we did, in pixels
-		var ly = last_render.ly * ( canvas.height / scale / MAGIC_Y ); // The y offset of the last render, in pixels
-
-		var tx = pan_x * ( canvas.width / scale / MAGIC_X ); // The current preview offset, in pixels
-		var ty = pan_y * ( canvas.height / scale / MAGIC_Y );
-
-		var dx = lx - tx; // The offset of the preview image
-		var dy = ly - ty;
-
-		ctx.fillStyle = "#000"
-		ctx.fillRect(0,0,canvas.width,canvas.height);
-		ctx.drawImage( last_render, dx, dy, canvas.width * (last_render.scale / scale), canvas.height * (last_render.scale / scale) ) // TODO: Fix zoom
-	}
-
-	navctx.beginPath()
-	navctx.fillStyle = "#000"
-	navctx.fillRect(0, 0, navcanv.width, navcanv.height);
-	if(cached_result) {
-		if(cached_result.complete) {
-			navctx.drawImage(cached_result, 0, 0, navcanv.width, navcanv.height);
-		}
-	}
-	ctx.beginPath();
-	navctx.strokeStyle = "#ffffff"
-	navctx.lineWidth = 2
-	navctx.rect((pan_x / MAGIC_X) * navcanv.width, (pan_y / 2) * navcanv.height, navcanv.width * scale, navcanv.height * scale)
-	navctx.stroke();
-
-	xcoord.value = pan_x;
-	ycoord.value = pan_y;
-	zoom.innerText = scale;
+	rerenderCanvas();
 })
-
-// FIXME: Update so that it uses the middle of the view instead of the top left
-xcoord.addEventListener("change", function() {
-	if(rendering) { this.value = pan_x; }
-	pan_x = parseFloat(this.value)
-
-	if(last_render.complete) {
-
-		var lx = last_render.lx * ( canvas.width / scale / MAGIC_X ); // The x offset of the last render we did, in pixels
-		var ly = last_render.ly * ( canvas.height / scale / MAGIC_Y ); // The y offset of the last render, in pixels
-
-		var tx = pan_x * ( canvas.width / scale / MAGIC_X ); // The current preview offset, in pixels
-		var ty = pan_y * ( canvas.height / scale / MAGIC_Y );
-
-		var ndx = lx - tx; // The offset of the preview image
-		var ndy = ly - ty;
-
-		ctx.fillStyle = "#000"
-		ctx.fillRect(0,0,canvas.width,canvas.height);
-		ctx.drawImage( last_render, ndx, ndy, canvas.width * (last_render.scale / scale), canvas.height * (last_render.scale / scale) )
-	}
-
-	navctx.beginPath()
-	navctx.fillStyle = "#000"
-	navctx.fillRect(0, 0, navcanv.width, navcanv.height);
-	if(cached_result) {
-		if(cached_result.complete) {
-			navctx.drawImage(cached_result, 0, 0, navcanv.width, navcanv.height);
-		}
-	}
-	ctx.beginPath();
-	navctx.strokeStyle = "#ffffff"
-	navctx.lineWidth = 2
-	navctx.rect((pan_x / MAGIC_X) * navcanv.width, (pan_y / MAGIC_Y) * navcanv.height, navcanv.width * scale, navcanv.height * scale)
-	navctx.stroke();
-})
-ycoord.addEventListener("change", function() {
-	if(rendering) { this.value = pan_y; }
-	pan_y = parseFloat(this.value)
-
-	if(last_render.complete) {
-
-		var lx = last_render.lx * ( canvas.width / scale / MAGIC_X ); // The x offset of the last render we did, in pixels
-		var ly = last_render.ly * ( canvas.height / scale / MAGIC_Y ); // The y offset of the last render, in pixels
-
-		var tx = pan_x * ( canvas.width / scale / MAGIC_X ); // The current preview offset, in pixels
-		var ty = pan_y * ( canvas.height / scale / MAGIC_Y );
-
-		var ndx = lx - tx; // The offset of the preview image
-		var ndy = ly - ty;
-
-		ctx.fillStyle = "#000"
-		ctx.fillRect(0,0,canvas.width,canvas.height);
-		ctx.drawImage( last_render, ndx, ndy, canvas.width * (last_render.scale / scale), canvas.height * (last_render.scale / scale) )
-	}
-
-	navctx.beginPath()
-	navctx.fillStyle = "#000"
-	navctx.fillRect(0, 0, navcanv.width, navcanv.height);
-	if(cached_result) {
-		if(cached_result.complete) {
-			navctx.drawImage(cached_result, 0, 0, navcanv.width, navcanv.height);
-		}
-	}
-	ctx.beginPath();
-	navctx.strokeStyle = "#ffffff"
-	navctx.lineWidth = 2
-	navctx.rect((pan_x / MAGIC_X) * navcanv.width, (pan_y / MAGIC_Y) * navcanv.height, navcanv.width * scale, navcanv.height * scale)
-	navctx.stroke();
-})
-
-document.getElementById("reset").onclick = function() {
-	pan_x = 0;
-	pan_y = 0;
-	scale = 1;
-
-	if(last_render.complete) {
-
-		var lx = last_render.lx * ( canvas.width / scale / MAGIC_X ); // The x offset of the last render we did, in pixels
-		var ly = last_render.ly * ( canvas.height / scale / MAGIC_Y ); // The y offset of the last render, in pixels
-
-		var tx = pan_x * ( canvas.width / scale / MAGIC_X ); // The current preview offset, in pixels
-		var ty = pan_y * ( canvas.height / scale / MAGIC_Y );
-
-		var ndx = lx - tx; // The offset of the preview image
-		var ndy = ly - ty;
-
-		ctx.fillStyle = "#000"
-		ctx.fillRect(0,0,canvas.width,canvas.height);
-		ctx.drawImage( last_render, ndx, ndy, canvas.width * (last_render.scale / scale), canvas.height * (last_render.scale / scale) )
-	}
-
-	navctx.beginPath()
-	navctx.fillStyle = "#000"
-	navctx.fillRect(0, 0, navcanv.width, navcanv.height);
-	if(cached_result) {
-		if(cached_result.complete) {
-			navctx.drawImage(cached_result, 0, 0, navcanv.width, navcanv.height);
-		}
-	}
-	ctx.beginPath();
-	navctx.strokeStyle = "#ffffff"
-	navctx.lineWidth = 2
-	navctx.rect((pan_x / MAGIC_X) * navcanv.width, (pan_y / MAGIC_Y) * navcanv.height, navcanv.width * scale, navcanv.height * scale)
-	navctx.stroke();
-
-	xcoord.value = 0;
-	ycoord.value = 0;
-	zoom.innerText = 1;
-}
 
 DoRender(0, 0, 1);
