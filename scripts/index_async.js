@@ -742,6 +742,8 @@ canvas.addEventListener("wheel", function(e) {
 	pan_y += (((canvas.height * _scale) - (canvas.height * scale)) / 2) * (MAGIC_Y / canvas.height);
 
 	rerenderCanvas();
+
+	e.preventDefault();
 })
 
 DoRender(0, 0, 1);
