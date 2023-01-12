@@ -2,7 +2,7 @@
 
 This is a simple browser fractal exploration tool with limited performance and precision due to that fact.
 
-**In the likely event that you do not know how to use this**
+**"How do I use this?"**
 # <u>How To Run:</u>
 * Download it onto any computer with a browser installed, you can do this by clicking the green `Code` button at the top right of the file viewer
 * Unpack the zip
