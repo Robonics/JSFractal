@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta http-equiv="X-UA-Compatible" content="IE=edge">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Fractal</title>
+	<link rel="stylesheet" href="styles/index.css">
+	<!-- This doesn't have to load before the body, but it does need to load before any other scripts so that it has time to load the resources -->
+	<script src="scripts/shader_loader.js"></script>
+
+	<script src="scripts/webgl.js" defer></script>
+</head>
+<body>
+	<canvas id="main" style="width: 80%;"></canvas>
+	<div class="control-box">
+
+		<label title="alter the colors of the fractal" for="hue">Hue Shift</label>
+		<input type="range" id="hue" name="hue" min="0" max="360" value="0">
+
+		<label title="The maximum iterations per point, higher will be more accurate" for="itr2">Max Iterations</label>
+		<input type="number" id="itr2" name="itr2" min="30" max="1000" value="100">
+
+		<label for="fractals">Fractal</label>
+		<select name="fractals" id="fractals"></select>
+
+		<label for="render-mode" title="Sets the render mode">Render Mode</label>
+		<select name="render-mode" id="render-mode">
+			<option value="0" selected>Iterative</option>
+			<option value="1">Orbit Trap (Point)</option>
+			<option value="2">Orbit Trap (Axis)</option>
+			<option value="3">Orbit Trap (All Points)</option>
+		</select>
+
+		<div class="pos-wrapper">
+			<span>Ref. Pos.</span>
+			<div class="pos-inputs">
+				<input type="number" id="ref-x" value="0" placeholder="real">
+				<span> + </span>
+				<input type="text" id="ref-y" value="0" placeholder="imag">
+				<span>i</span>
+			</div>
+		</div>
+
+		<div>
+			<label for="grid">Draw Grid</label>
+			<input type="checkbox" name="grid" id="grid">
+		</div>
+
+		<div class="divider"></div>
+
+		<div id="parameters">
+		</div>
+
+		<span id="fps-counter"></span>
+	</div>
+</body>
+</html>

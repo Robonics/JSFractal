@@ -1,0 +1,6 @@
+{
+	"Developer Shader": {
+		"vertex": "dev.vert",
+		"fragment": "dev.frag"
+	}
+}

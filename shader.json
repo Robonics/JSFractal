@@ -1,0 +1,7 @@
+{
+	"vertex": "attribute vec2 a_position;\nvoid main() {\n\tgl_Position = vec4(a_position, 0, 1);\n}",
+	"fragment": "",
+	"shaders": {
+		"Mandelbrot Set": ""
+	}
+}
