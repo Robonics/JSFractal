@@ -677,6 +677,8 @@ window.addEventListener("keydown", function(e) {
 			rerenderCanvas();
 			this.proposed_julia = juliaHelpText(e)
 		}
+	}else if(e.code == "KeyO") {
+		canvas.mouse_middle = true;
 	}
 })
 window.addEventListener("keyup", function(e) {
@@ -704,6 +706,8 @@ window.addEventListener("keyup", function(e) {
 			}else {
 				rerenderCanvas();
 			}
+	}else if(e.code == "KeyO") {
+		canvas.mouse_middle = false;
 	}
 })
 
