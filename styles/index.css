@@ -88,6 +88,14 @@ input[type="range"]::-webkit-slider-thumb {
 input[type="range"]:hover::-webkit-slider-thumb {
 	background-color: rgb(110, 201, 247);
 }
+div:has(input[type="checkbox"]) > label {
+	float: left;
+	width: 70%;
+}
+div:has(input[type="checkbox"]) > input[type="checkbox"] {
+	float: right;
+	width: 20%;
+}
 select {
 	border: 1px solid white;
 	background-color: rgb(20, 20, 20);
@@ -129,10 +137,24 @@ button#rerender {
 	z-index: 999 !important;
 }
 
-#timer {
+#timer, #fps-counter {
 	font-family: sans-serif;
 	font-style: italic;
 	font-weight: bold;
 	font-size: 12px;
 	margin-top: 5px;
+}
+#fps-counter { margin-top: 0; }
+
+.pos-wrapper {
+	display: flex;
+	flex-direction: row;
+
+	max-width: 250px;
+}
+.pos-inputs {
+	padding-left: 5px;
+}
+.pos-inputs input {
+	width: 40px;
 }
