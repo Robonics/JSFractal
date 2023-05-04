@@ -6,17 +6,24 @@
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
 	<title>Fractal</title>
 	<link rel="stylesheet" href="styles/index.css">
-	<!-- This doesn't have to load before the body, but it does need to load before any other scripts so that it has time to load the resources -->
-	<script src="scripts/shader_loader.js"></script>
-
+	
+	<script src="scripts/shader_builder.js"></script>
+	<!-- <script src="scripts/shader_loader.js"></script> -->
 	<script src="scripts/webgl.js" defer></script>
 </head>
 <body>
 	<canvas id="main" style="width: 80%;"></canvas>
 	<div class="control-box">
 
-		<label title="alter the colors of the fractal" for="hue">Hue Shift</label>
-		<input type="range" id="hue" name="hue" min="0" max="360" value="0">
+		<label title="alter the colors of the fractal" for="color">Base Color</label>
+		<input type="color" id="color" name="color" value="#e61919">
+
+		<label for="coloring_hue">Coloring Method<br>Hue</label>
+		<input type="range" id="coloring_hue" value="1" min="0" max="1" step="0.01">
+		<label for="coloring_saturation">Saturation</label>
+		<input type="range" id="coloring_saturation" value="0" min="0" max="1" step="0.01">
+		<label for="coloring_luminance">Luminance</label>
+		<input type="range" id="coloring_luminance" value="0" min="0" max="1" step="0.01">
 
 		<label title="The maximum iterations per point, higher will be more accurate" for="itr2">Max Iterations</label>
 		<input type="number" id="itr2" name="itr2" min="30" max="1000" value="100">
