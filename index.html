@@ -4,8 +4,169 @@
 	<meta charset="UTF-8">
 	<meta http-equiv="X-UA-Compatible" content="IE=edge">
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
-	<title>Fractal</title>
-	<link rel="stylesheet" href="styles/index.css">
+	<title>JSFractal Viewer</title>
+	<style>
+		body {
+			background: #333;
+			color: white;
+		}
+
+		canvas {
+			background: black;
+			padding: 5px;
+			border: 2px solid white;
+		}
+
+		.control-box {
+			background-color: black;
+			padding: 5px;
+			border: 2px solid white;
+
+			float: right;
+			display: flex;
+			flex-direction: column;
+		}
+
+		button {
+			margin-top: 5px;
+			background-color: transparent;
+			color: white;
+			border: 1px solid white;
+
+			transition: color 250ms, border-color 250ms;
+		}
+		button:hover {
+			color: rgb(166, 225, 255);
+			border-color: rgb(110, 201, 247);
+		}
+
+		input {
+			border-radius: 0px;
+			border: 1px solid white;
+			background-color: rgb(20, 20, 20);
+			color: white;
+
+			transition: color 250ms, border-color 250ms;
+		}
+		input:not([type="range"]):hover {
+			color:rgb(166, 225, 255);
+			border-color: rgb(110, 201, 247);
+		}
+		input[type=number]::-webkit-inner-spin-button, 
+		input[type=number]::-webkit-outer-spin-button { 
+			appearance: none;
+			-webkit-appearance: none;
+		}
+		input[type="range"] {
+			-webkit-appearance: none;
+			appearance: none;
+			border: none;
+			background-color: transparent;
+			--height: 12px;
+			height: var(--height);
+			position: relative;
+		}
+		input[type="range"]::before {
+			position: absolute;
+			content: "";
+			left: 0;
+			top: 4px;
+			right: 0;
+			bottom: 4px;
+
+			border-radius: 2px;
+
+			background-color: gray;
+			z-index: 0;
+		}
+		input[type="range"]::-webkit-slider-thumb {
+			position: relative;
+			-webkit-appearance: none;
+			appearance: none;
+			background-color: white;
+			border-radius: 50%;
+
+			width: var(--height);
+			height: var(--height);
+
+			z-index: 999 !important;
+
+			transition: background-color 250ms;
+		}
+		input[type="range"]:hover::-webkit-slider-thumb {
+			background-color: rgb(110, 201, 247);
+		}
+		div:has(input[type="checkbox"]) > label {
+			float: left;
+			width: 70%;
+		}
+		div:has(input[type="checkbox"]) > input[type="checkbox"] {
+			float: right;
+			width: 20%;
+		}
+		select {
+			border: 1px solid white;
+			background-color: rgb(20, 20, 20);
+			color: white;
+
+			transition: color 250ms, border-color 250ms;
+		}
+		select:hover {
+			color:rgb(166, 225, 255);
+			border-color: rgb(110, 201, 247);
+		}
+
+		#parameters {
+			display: flex;
+			flex-direction: column;
+		}
+
+		.divider {
+			border-bottom: 1px solid white;
+			margin: 5px auto;
+			width: 100%;
+		}
+
+		button#rerender::before {
+			position: absolute;
+			left: 0;
+			top: 0;
+			bottom: 0;
+			content: "";
+			z-index: -1;
+
+			background-color: var(--sub-color);
+			width: var(--sub-width);
+		}
+		button#rerender {
+			--sub-width: 0%;
+			--sub-color:rgb(78, 124, 225);
+			position: relative;
+			z-index: 999 !important;
+		}
+
+		#timer, #fps-counter {
+			font-family: sans-serif;
+			font-style: italic;
+			font-weight: bold;
+			font-size: 12px;
+			margin-top: 5px;
+		}
+		#fps-counter { margin-top: 0; }
+
+		.pos-wrapper {
+			display: flex;
+			flex-direction: row;
+
+			max-width: 250px;
+		}
+		.pos-inputs {
+			padding-left: 5px;
+		}
+		.pos-inputs input {
+			width: 40px;
+		}
+	</style>
 	<script src="scripts/index_async.js" defer></script>
 </head>
 <body>
