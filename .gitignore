@@ -1,3 +1,4 @@
 _*.js
 .*/
 *info.txt
+*.frag
