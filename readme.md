@@ -10,6 +10,7 @@ This is a simple browser fractal exploration tool with limited performance and p
 - [Quick Tips:](#quick-tips)
 - [Known Issues](#known-issues)
 - [Future Additions](#future-additions)
+- [The WebGL Version](#the-webgl-version)
 - [Images](#images)
 # <u>How To Open:</u>
 Your modern browser should be capable of properly displaying the webpage and running the code
