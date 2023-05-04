@@ -2,11 +2,22 @@
 
 This is a simple browser fractal exploration tool with limited performance and precision due to that fact.
 
-**"How do I use this?"**
-# <u>How To Run:</u>
+### Quick Links:
+- [How To Open:](#how-to-open)
+- [How To Use:](#how-to-use)
+- [Navigating:](#navigating)
+- [The Fractals:](#the-fractals)
+- [Quick Tips:](#quick-tips)
+- [Known Issues](#known-issues)
+- [Future Additions](#future-additions)
+- [Images](#images)
+# <u>How To Open:</u>
+Your modern browser should be capable of properly displaying the webpage and running the code
 * Download it onto any computer with a browser installed, you can do this by clicking the green `Code` button at the top right of the file viewer
 * Unpack the zip
 * Open `index.html`, your computer should be smart enough to do this with a browser, but if not, you can Right Click > Open With > *Browser* (on windows)
+
+**If you'd like to experiment with the work in progress GPU accelerated version**, simply open `webgl_dev.html` instead. This may not perform well or at all on older machines.
 # <u>How To Use:</u>
 * The fractal should automatically render a full view when you open the page from left to right. The controls are in the top right of the screen, but if your display is small they may get pushed under the fractal view
 * The **Control Pane** has several settings that control how the fractal is rendered. There is
@@ -32,21 +43,21 @@ There are several methods to navigate a fractal, you can click & drag on the fra
 # <u>The Fractals:</u>
 There are 7 currently implemented fractals:
 * The Burning Ship
-	* Represented by the function <img style="background-color: white; padding: 5px; border-radius: 5px; display: inline-block;" src="https://wikimedia.org/api/rest_v1/media/math/render/svg/c163d06790d201f33305e5eae47b523a6c8b1e33">
+	* Represented by the function: $Z_{n+1}=(|Re(Z_n)|+i|Im(Z_n)|)^2+c, Z_0=0$
 * Broken Burning Ship
-	* A version of the burning ship where the initial x and y values are swapped before iteration
+	* A version of the burning ship where the $Re(c)$ and $Im(c)$ values are swapped before iteration - This will probably be removed
 * The Mandelbrot Set
-	* Framous fractal represented by the function <img style="background-color: white; padding: 5px; border-radius: 5px; display: inline-block;" src="https://wikimedia.org/api/rest_v1/media/math/render/svg/191627a3eebdd6608c9b226786defc468b747502">
+	* Famous fractal. "This fractal was first defined and drawn in 1978 by Robert W. Brooks and Peter Matelski as part of a study of Kleinian groups." ([Wikipedia](https://en.wikipedia.org/wiki/Mandelbrot_set#History)) represented by the function $Z_{n+1}=Z_n^2+c, Z_0=0$. $c$ is a point, and the set is defined such that it contains any point $c$ where $Z_{\infty}$ at $c$ does not diverge to infinity.
 * Chirinov Map / Standard Map
-	* Represented by the function <img style="background-color: white; padding: 5px; border-radius: 5px; display: inline-block;" src="https://wikimedia.org/api/rest_v1/media/math/render/svg/6aaa7238221f3348dbbe5699896a81e113713040">, <img style="background-color: white; padding: 5px; border-radius: 5px; display: inline-block;" src="https://wikimedia.org/api/rest_v1/media/math/render/svg/0c3e9303a68971b9dbe32c071ed06415a9a52636">
+	* Mathematically represented by the function pair $p_{n+1}=p_n+K\sin(\theta_n)$ and $\theta_{n+1}=\theta_n+p_{n+1}$
 * Hénon Map
-	* Represented by the function <img style="background-color: white; padding: 5px; border-radius: 5px; display: inline-block;" src="https://wikimedia.org/api/rest_v1/media/math/render/svg/87672565712868250e7d2b410307bb1b047f31a7">
+	* Represented by the functions $x_{n+1}=1-ax_n^2+y_n$ and $y_{n+1}=bx_n$
 * Tricorn / Mandelbar
-	* Similar to the mandelbrot set, represented by <img style="background-color: white; padding: 5px; border-radius: 5px; display: inline-block;" src="https://wikimedia.org/api/rest_v1/media/math/render/svg/adee2ebd905355474d40cca3df638690e8fa0893">
+	* Similar to the mandelbrot set, represented by $z \mapsto{ \bar{x}^2+c}$
 * Mandelbox
-	* Similar to the mandelbrot, however, it can be defined in any dimension with ease. It is represented by an iterative set of steps that are dependent on x and y's value as they iterate. It can also be manipulated by a constant (Defaults to 2 for now).
+	* Similar to the mandelbrot, however, it can be defined in any dimension with ease. It is represented by an iterative set of steps that are dependent on x and y's value as they iterate. It can also be manipulated by a constant (Defaults to 2 for now). See [Wikipedia](https://en.wikipedia.org/wiki/Mandelbox) for a breakdown of how it is calculated
 * Bogdanov Map
-	* Represented by the functions <img style="background-color: white; padding: 5px; border-radius: 5px; display: inline-block;" src="https://wikimedia.org/api/rest_v1/media/math/render/svg/c0b391c45aef979aed3daa546536016a8ebee34f">
+	* Represented by the functions $x_{n+1}=x_n+y_{n+1}$ and $y_n+1=y_n+\epsilon y_n+kx_n(x_n-1)+\mu x_ny_n$. There are 3 parameters controlling the shape of the final fractal in this, being $\epsilon, k, \mu$
 ### Quick Tips:
 * When zooming in on a complicated fractal, it can help to increase the max iterations. While an area of the fractal may look solid, increasing this value will often expose more patterns to explore:
 <div style="display: flex; flex-wrap: wrap;">
@@ -70,7 +81,21 @@ _The same region rendered with 100, 200, and 300 max iterations respectively_
 ## Future Additions
 * A smoother rendering feature, that automatically renders sections as you pan in increasing detail (Will take lots of work)
 
+# The WebGL Version
+The WebGL powered version is still very experimental, and has it's own set of flaws and new features. Below is a truncated list.
+- Runs live on the GPU, frames can be rendered at 60 regularly
+- Smooth scroll for mouse wheels, can be buggy
+- New rendering controls
+- End goal of creating a potential way for users to upload fractal formulas to a website and have them be converted into GLSL code (would require building some kind of backend infrastructure)
+- *Currently* less precision (only 32 bits vs 64)
+- Can become immensely laggy and difficult to navigate (May have a solution improve experience at lower FPS).
+- Currently only supports iterative rendering
+- Currently only supports 3 fractals
+
+As mentioned in [How to Open](#how-to-open), the WebGL version may not work on older devices or browsers. It currently can run on either WebGL or WebGL2, but if you browser doesn't support that, or your device simply doesn't have the GPU grunt, it may be unusable. While optimizations are in mind, this may or may not change for you.
+
 ## Images
+*some UI may be outdated*
 ![](https://i.imgur.com/KuOI26i.png)
 ![](https://i.imgur.com/5uqhO1Q.png)
 ![](https://i.imgur.com/IW37OeI.png)
