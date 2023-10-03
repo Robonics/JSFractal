@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8">
+		<meta http-equiv="X-UA-Compatible" content="IE=edge">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0">
+		<title>Prime Spirals</title>
+
+		<style>
+			body {
+				background: #333;
+				color: white;
+			}
+
+			canvas {
+				background: black;
+				padding: 5px;
+				border: 2px solid white;
+				aspect-ratio: 16/9;
+				height: 90vh;
+			}
+
+			#box {
+				float: right;
+				background-color: black;
+				border: 2px solid white;
+				padding: 5px;
+				display: flex;
+				flex-direction: column;
+			}
+
+			button {
+				margin-top: 5px;
+				background-color: transparent;
+				color: white;
+				border: 1px solid white;
+
+				transition: color 250ms, border-color 250ms;
+			}
+			button:hover {
+				color: rgb(166, 225, 255);
+				border-color: rgb(110, 201, 247);
+			}
+
+			select {
+				margin: 5px;
+				border-radius: 0px;
+				border: 1px solid white;
+				background-color: #333;
+				color: white;
+			}
+
+			.multi-box {
+				max-width: 18vw;
+				border-top: 1px solid white;
+				border-bottom: 1px solid white;
+				margin: 5px;
+			}
+			.multi-box input:not([type="checkbox"]) {
+				width: 80px;
+			}
+
+			span i {
+				font-size: small;
+			}
+		</style>
+
+		<script src="/scripts/prime_spirals.js" defer></script>
+	</head>
+	<body>
+		<canvas id="main"></canvas>
+		<form id="box" autocomplete="off" onsubmit="return false">
+			<button id="btn-center">Center View</button>
+			<select id="filter-mode">
+				<option selected value="primeHighlight">Highlight primes</option>
+				<option value="primeOnly">Only show primes</option>
+				<option value="all">Show everything</option>
+			</select>
+			<span><input id="draw-grid" type="checkbox">Draw polar grid</span>
+			<span><input id="draw-numbers" type="checkbox">Draw numbers</span>
+			<span><input id="draw-coords" type="checkbox">Show current pan and scale</span>
+			<div class="multi-box">
+				<input checked="false" type="checkbox" id="shouldOnlyN"><span>Show only integers where:<br>n = </span><input id="onlyN" type="number" placeholder="r"><span>k + </span><input id="onlyC" type="number" placeholder="c">
+				<script>//Start unchecked because firefox will auto check it when you reload
+					nodes = document.querySelectorAll("input[type=\"checkbox\"]");
+					for( i = 0; i < nodes.length; i++ ) {
+						nodes[i].checked = false;
+					}
+				</script>
+			</div>
+			<div class="multi-box">
+				<span>Do a <button id="btn-zoomin">zoom in</button> or <button id="btn-zoomout">zoom out</button> until until the scale is <input step="0.001" type="number" id="zoomTo"><br><i>can interrupted anytime by scrolling or pressing any key</i></span>
+			</div>
+		</form>
+	</body>
+</html>
